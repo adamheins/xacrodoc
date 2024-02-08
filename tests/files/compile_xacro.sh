@@ -1,7 +1,8 @@
 #!/bin/sh
-# compile xacro files into raw URDFs
-# note that we run each command more than once to resolve nested macros
+# regenerate the raw URDF files
+# the grep pattern gets rid of the warning banner and trailing newline
 
-xacro threelink.urdf.xacro -o threelink.urdf
-xacro tool.urdf.xacro -o tool.urdf
-xacro combined.urdf.xacro -o combined.urdf
+xacro threelink.urdf.xacro | grep -v "^<!--.*-->\|^$" > threelink.urdf
+xacro combined.urdf.xacro | grep -v "^<!--.*-->\|^$" > combined.urdf
+xacro tool.urdf.xacro | grep -v "^<!--.*-->\|^$" > tool.urdf
+xacro tool.urdf.xacro mass:=2 | grep -v "^<!--.*-->\|^$" > tool2.urdf

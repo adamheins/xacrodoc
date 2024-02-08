@@ -1,4 +1,4 @@
-<?xml version="1.0" ?>
+<?xml version="1.0" encoding="utf-8"?>
 <robot name="combined" xmlns:xacro="http://www.ros.org/wiki/xacro">
   <xacro:include filename="threelink.urdf.xacro" />
   <xacro:include filename="tool.urdf.xacro" />

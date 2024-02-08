@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>xacrodoc</name>
+  <version>0.1.0</version>
+  <description>Programmatically compile xacro files.</description>
+  <maintainer email="mail@adamheins.com">Adam Heins</maintainer>
+  <license>MIT</license>
+
+  <depend>xacro</depend>
+  <depend>rospkg</depend>
+
+  <test_depend>pytest</test_depend>
+
+  <buildtool_depend>catkin</buildtool_depend>
+</package>

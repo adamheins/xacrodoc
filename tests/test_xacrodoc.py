@@ -9,11 +9,40 @@ def test_compile():
 
 
 def test_from_includes():
-    doc = XacroDoc.from_file("files/threelink.urdf.xacro")
-    with open("files/threelink.urdf") as f:
+    includes = ["files/threelink.urdf.xacro", "files/tool.urdf.xacro"]
+    doc = XacroDoc.from_includes(includes, name="combined")
+    with open("files/combined.urdf") as f:
         expected = f.read()
     assert doc.to_urdf_string() == expected
 
 
+def test_from_includes_ros_find():
+    # handle $(find ...) directives
+    includes = [
+        "$(find xacrodoc)/tests/files/threelink.urdf.xacro",
+        "$(find xacrodoc)/tests/files/tool.urdf.xacro",
+    ]
+    doc = XacroDoc.from_includes(includes, name="combined")
+    with open("files/combined.urdf") as f:
+        expected = f.read()
+    assert doc.to_urdf_string() == expected
+
+
+def test_sub_args():
+    doc = XacroDoc.from_file("files/tool.urdf.xacro", mappings={"mass": "2"})
+    with doc.temp_urdf_file_path() as path:
+        with open(path) as f:
+            text = f.read()
+    with open("files/tool2.urdf") as f:
+        expected = f.read()
+    assert text == expected
+
+
 def test_temp_urdf_file():
-    pass
+    doc = XacroDoc.from_file("files/threelink.urdf.xacro")
+    with doc.temp_urdf_file_path() as path:
+        with open(path) as f:
+            text = f.read()
+    with open("files/threelink.urdf") as f:
+        expected = f.read()
+    assert text == expected

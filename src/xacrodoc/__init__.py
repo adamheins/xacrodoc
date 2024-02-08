@@ -31,6 +31,7 @@ def package_file_path(package_name, relative_path):
     return package_path(package_name) / relative_path
 
 
+  # <xacro:arg name="use_collision" default="true"/>
 def _xacro_compile(s, mappings=None, max_runs=10):
     """Compile xacro string until a fixed point is reached.
 
@@ -123,7 +124,7 @@ class XacroDoc:
         return cls.from_file(path, **kwargs)
 
     @classmethod
-    def from_includes(cls, includes, **kwargs):
+    def from_includes(cls, includes, name="robot", **kwargs):
         """Build the URDF document from xacro includes.
 
         Parameters
@@ -133,9 +134,8 @@ class XacroDoc:
             empty, xacro file. Any string that can be used in a xacro include
             directive is valid, so look-ups like ``$(find package)`` are valid.
         """
-        s = """
-        <?xml version="1.0" ?>
-        <robot name="robot" xmlns:xacro="http://www.ros.org/wiki/xacro">
+        s = f"""<?xml version="1.0" encoding="utf-8"?>
+        <robot name="{name}" xmlns:xacro="http://www.ros.org/wiki/xacro">
         """.strip()
         for incl in includes:
             s += _xacro_include(incl)
@@ -213,7 +213,7 @@ class XacroDoc:
 
         Returns
         -------
-        str
+        : str
             The URDF represented as a string.
         """
         if pretty:
