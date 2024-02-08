@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<robot name="threelink" xmlns:xacro="http://wiki.ros.org/xacro">
+  <material name="red">
+    <color rgba="0.8 0.0 0.0 1.0"/>
+  </material>
+  <material name="black">
+    <color rgba="0.0 0.0 0.0 1.0"/>
+  </material>
+
+  <xacro:macro name="uniform_box_inertia" params="mass Lx Ly Lz">
+    <inertia ixx="${mass * (Ly**2 + Lz**2) / 12.0}" ixy="0.0" ixz="0.0"
+      iyy="${mass * (Lx**2 + Lz**2) / 12.0}" iyz="0.0"
+      izz="${mass * (Lx**2 + Ly**2) / 12.0}" />
+  </xacro:macro>
+
+  <link name="base_link">
+    <inertial>
+      <mass value="1"/>
+      <xacro:uniform_box_inertia mass="1" Lx="0.1" Ly="0.1" Lz="0.2"/>
+      <origin rpy="0 0 0" xyz="0 0 0.1"/>
+    </inertial>
+
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0.1"/>
+      <geometry>
+        <box size="0.1 0.1 0.2"/>
+      </geometry>
+      <material name="black"/>
+    </visual>
+
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0.1"/>
+      <geometry>
+        <box size="0.1 0.1 0.2"/>
+      </geometry>
+    </collision>
+  </link>
+
+	<joint name="link1_joint" type="revolute">
+    <parent link="base_link"/>
+    <child link="link1"/>
+    <axis xyz="0 1 0"/>
+    <origin rpy="0 0 0" xyz="0 0.1 0.15"/>
+    <limit effort="100.0" velocity="1000.0"/>
+  </joint>
+
+	<link name="link1">
+    <inertial>
+      <mass value="1"/>
+      <xacro:uniform_box_inertia mass="1" Lx="0.1" Ly="0.1" Lz="0.3"/>
+      <origin rpy="0 0 0" xyz="0 0 0.1"/>
+    </inertial>
+
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0.1"/>
+      <geometry>
+        <box size="0.1 0.1 0.3"/>
+      </geometry>
+      <material name="red"/>
+    </visual>
+
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0.1"/>
+      <geometry>
+        <box size="0.1 0.1 0.3"/>
+      </geometry>
+    </collision>
+  </link>
+
+	<joint name="link2_joint" type="revolute">
+    <parent link="link1"/>
+    <child link="link2"/>
+    <axis xyz="0 1 0"/>
+    <origin rpy="0 0 0" xyz="0 -0.1 0.2"/>
+    <limit effort="100.0" velocity="1000.0"/>
+  </joint>
+
+	<link name="link2">
+    <inertial>
+      <mass value="1"/>
+      <xacro:uniform_box_inertia mass="1" Lx="0.1" Ly="0.1" Lz="0.3"/>
+      <origin rpy="0 0 0" xyz="0 0 0.1"/>
+    </inertial>
+
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0.1"/>
+      <geometry>
+        <box size="0.1 0.1 0.3"/>
+      </geometry>
+      <material name="red"/>
+    </visual>
+
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0.1"/>
+      <geometry>
+        <box size="0.1 0.1 0.3"/>
+      </geometry>
+    </collision>
+  </link>
+
+	<joint name="link3_joint" type="revolute">
+    <parent link="link2"/>
+    <child link="link3"/>
+    <axis xyz="0 1 0"/>
+    <origin rpy="0 0 0" xyz="0 0.1 0.2"/>
+    <limit effort="100.0" velocity="1000.0"/>
+  </joint>
+
+	<link name="link3">
+    <inertial>
+      <mass value="1"/>
+      <xacro:uniform_box_inertia mass="1" Lx="0.1" Ly="0.1" Lz="0.3"/>
+      <origin rpy="0 0 0" xyz="0 0 0.1"/>
+    </inertial>
+
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0.1"/>
+      <geometry>
+        <box size="0.1 0.1 0.3"/>
+      </geometry>
+      <material name="red"/>
+    </visual>
+
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0.1"/>
+      <geometry>
+        <box size="0.1 0.1 0.3"/>
+      </geometry>
+    </collision>
+  </link>
+</robot>
