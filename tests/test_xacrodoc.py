@@ -28,8 +28,8 @@ def test_from_includes_ros_find():
     assert doc.to_urdf_string() == expected
 
 
-def test_sub_args():
-    doc = XacroDoc.from_file("files/tool.urdf.xacro", mappings={"mass": "2"})
+def test_subargs():
+    doc = XacroDoc.from_file("files/tool.urdf.xacro", subargs={"mass": "2"})
     with doc.temp_urdf_file_path() as path:
         with open(path) as f:
             text = f.read()

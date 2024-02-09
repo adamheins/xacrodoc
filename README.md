@@ -1,24 +1,31 @@
 # xacrodoc
 
-xacrodoc is a tool for programmatically compiling xacro'd URDF files.
+xacrodoc is a tool for programmatically compiling [xacro]()'d URDF files.
 
 Why?
-This can be used to e.g. put together multiple xacro files from include statements
-This is convenient for putting together multiple 
+
+* Avoid the clutter of redundant compiled raw URDFs; only keep the xacro
+  source files.
+* Programmatically compose multiple xacro files and apply subtitution
+  arguments to build a flexible URDF model.
+* Convenient interfaces to provide URDF strings and URDF file paths as needed.
+  For example, many libraries (such as [Pinocchio]()) accept a URDF string to
+  build a model, but others (like [PyBullet]()) only load URDFs directly from file
+  paths.
 
 ## Installation
 
-xacrodoc requires ROS to be installed on your system.
+xacrodoc requires ROS to be installed on your system with Python 3.
 
 From pip:
 ```
 pip install xacrodoc
 ```
 
-For a source installation, install into a catkin workspace:
+For a source installation, build in a catkin workspace:
 ```
 cd catkin_ws/src
-git clone ...
+git clone https://github.com/adamheins/xacrodoc
 catkin build
 ```
 
@@ -63,6 +70,28 @@ includes = [
 doc = XacroDoc.from_includes(includes)
 ```
 
-## Licence
+Finally, we can also pass in substution arguments. For example, suppose our
+file `robot.urdf.xacro` contains the directive `<xacro:arg name="mass" default="1"/>`. On the command line, we could write
+```
+xacro robot_base.urdf.xacro -o robot_base.urdf mass:=2
+```
+to set the mass value. Programmatically, we do
+```python
+from xacrodoc import XacroDoc
+
+doc = XacroDoc.from_file("robot.urdf.xacro", subargs={"mass": "2"})
+```
+
+## Development
+
+Tests use `pytest`:
+```
+cd tests
+pytest .
+```
+
+Build and package:
+
+## License
 
 MIT

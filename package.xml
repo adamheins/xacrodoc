@@ -4,12 +4,14 @@
   <version>0.1.0</version>
   <description>Programmatically compile xacro files.</description>
   <maintainer email="mail@adamheins.com">Adam Heins</maintainer>
+  <author>Adam Heins</author>
+  <url>https://github.com/adamheins/xacrodoc</url>
   <license>MIT</license>
 
-  <depend>xacro</depend>
-  <depend>rospkg</depend>
+  <exec_depend>xacro</exec_depend>
+  <exec_depend>python-rospkg</exec_depend>
 
-  <test_depend>pytest</test_depend>
+  <test_depend>python-pytest</test_depend>
 
   <buildtool_depend>catkin</buildtool_depend>
 </package>

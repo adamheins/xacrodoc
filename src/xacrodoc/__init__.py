@@ -13,33 +13,20 @@ def _xacro_include(path):
     """
 
 
-def package_path(package_name):
-    """Get the path to a ROS package."""
-    rospack = rospkg.RosPack()
-    return Path(rospack.get_path(package_name))
+def _xacro_header(name):
+    return f"""<?xml version="1.0" encoding="utf-8"?>
+    <robot name="{name}" xmlns:xacro="http://www.ros.org/wiki/xacro">
+    """.strip()
 
 
-def package_file_path(package_name, relative_path):
-    """Get the path to a file within a ROS package.
-
-    Parameters:
-        package_name is the name of the ROS package
-        relative_path is the path of the file relative to the package root
-
-    Returns: Path object representing the file path.
-    """
-    return package_path(package_name) / relative_path
-
-
-  # <xacro:arg name="use_collision" default="true"/>
-def _xacro_compile(s, mappings=None, max_runs=10):
+def _xacro_compile(text, subargs=None, max_runs=10):
     """Compile xacro string until a fixed point is reached.
 
     Parameters
     ----------
-    s : str
+    text : str
         The xacro string.
-    mappings : dict or None
+    subargs : dict or None
         Optional dictionary of substitution arguments to pass into xacro.
     max_runs : int
         Maximum number of compilation runs.
@@ -54,14 +41,14 @@ def _xacro_compile(s, mappings=None, max_runs=10):
     :
         The URDF XML document.
     """
-    if mappings is None:
-        mappings = {}
-    doc = xacro.parse(s)
+    if subargs is None:
+        subargs = {}
+    doc = xacro.parse(text)
     s1 = doc.toxml()
 
     run = 1
     while run < max_runs:
-        xacro.process_doc(doc, mappings=mappings)
+        xacro.process_doc(doc, mappings=subargs)
         s2 = doc.toxml()
         if s1 == s2:
             break
@@ -73,6 +60,41 @@ def _xacro_compile(s, mappings=None, max_runs=10):
     return doc
 
 
+def package_path(package_name):
+    """Get the path to a ROS package.
+
+    Parameters
+    ----------
+    package_name : str
+        The name of the package
+
+    Returns
+    -------
+    : Path
+        The package path.
+    """
+    rospack = rospkg.RosPack()
+    return Path(rospack.get_path(package_name))
+
+
+def package_file_path(package_name, relative_path):
+    """Get the path to a file within a ROS package.
+
+    Parameters
+    ----------
+    package_name : str
+        The name of the ROS package.
+    relative_path : str or Path
+        The path of the file relative to the package root.
+
+    Returns
+    -------
+    : Path
+        The file path.
+    """
+    return package_path(package_name) / relative_path
+
+
 class XacroDoc:
     """Convenience class to build URDF strings and files out of xacro components.
 
@@ -80,8 +102,10 @@ class XacroDoc:
     ----------
     text : str
         The xacro text to compile into a URDF document.
-    mappings :
-        Optional dict of substitution arguments.
+    subargs : dict or None
+        Optional dict of substitution arguments; i.e., the values of
+        <xacro:arg ...> directives. Equivalent to writing ``value:=foo`` on the
+        command line.
     max_runs : int
         The text is repeated compiled until a fixed point is reached; i.e.,
         compilation of the text just returns the same text. ``max_runs`` is the
@@ -93,8 +117,8 @@ class XacroDoc:
         The underlying XML document.
     """
 
-    def __init__(self, text, mappings=None, max_runs=10):
-        self.doc = _xacro_compile(text, mappings, max_runs)
+    def __init__(self, text, subargs=None, max_runs=10):
+        self.doc = _xacro_compile(text=text, subargs=subargs, max_runs=max_runs)
 
     @classmethod
     def from_file(cls, path, **kwargs):
@@ -102,7 +126,7 @@ class XacroDoc:
 
         Parameters
         ----------
-        path :
+        path : str or Path
             The path to the xacro file.
         """
         with open(path) as f:
@@ -117,7 +141,7 @@ class XacroDoc:
         ----------
         package_name : str
             The name of the ROS package.
-        relative_path : str
+        relative_path : str or Path
             The path of the xacro file relative to the ROS package.
         """
         path = package_file_path(package_name, relative_path)
@@ -133,10 +157,10 @@ class XacroDoc:
             A list of strings representing files to include in a new, otherwise
             empty, xacro file. Any string that can be used in a xacro include
             directive is valid, so look-ups like ``$(find package)`` are valid.
+        name : str
+            The name of the top-level robot tag.
         """
-        s = f"""<?xml version="1.0" encoding="utf-8"?>
-        <robot name="{name}" xmlns:xacro="http://www.ros.org/wiki/xacro">
-        """.strip()
+        s = _xacro_header(name)
         for incl in includes:
             s += _xacro_include(incl)
         s += "</robot>"
@@ -147,12 +171,12 @@ class XacroDoc:
 
         Parameters
         ----------
-        path :
+        path : str or Path
             The path to the URDF file to be written.
         compare_existing : bool
-            If ``True``, if the file at ``path`` already exists, read it and
-            only write back to it if the parsed URDF is different than the file
-            content. This avoids some race conditions if the file is being
+            If ``True``, then if the file at ``path`` already exists, read it
+            and only write back to it if the parsed URDF is different than the
+            file content. This avoids some race conditions if the file is being
             compiled by multiple processes concurrently.
         verbose : bool
             Set to ``True`` to print information about xacro compilation,
