@@ -1,6 +1,7 @@
 # xacrodoc
 
-xacrodoc is a tool for programmatically compiling [xacro]()'d URDF files.
+xacrodoc is a tool for programmatically compiling
+[xacro](https://github.com/ros/xacro)'d URDF files.
 
 Why?
 
@@ -9,9 +10,10 @@ Why?
 * Programmatically compose multiple xacro files and apply subtitution
   arguments to build a flexible URDF model.
 * Convenient interfaces to provide URDF strings and URDF file paths as needed.
-  For example, many libraries (such as [Pinocchio]()) accept a URDF string to
-  build a model, but others (like [PyBullet]()) only load URDFs directly from file
-  paths.
+  For example, many libraries (such as
+  [Pinocchio](https://github.com/stack-of-tasks/pinocchio)) accept a URDF
+  string to build a model, but others (like [PyBullet](https://pybullet.org))
+  only load URDFs directly from file paths.
 
 ## Installation
 
@@ -84,13 +86,16 @@ doc = XacroDoc.from_file("robot.urdf.xacro", subargs={"mass": "2"})
 
 ## Development
 
-Tests use `pytest`:
+Tests use `pytest`. Ensure that the catkin workspace's setup file has been
+sourced to make the package available.
 ```
 cd tests
 pytest .
 ```
 
-Build and package:
+For local testing, the project needs to be built as a ROS package in a catkin
+workspace, which uses the `setup.py` file. For building and publishing to
+PyPI, we use `poetry` and the configuration in `pyproject.toml`.
 
 ## License
 
