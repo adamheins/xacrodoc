@@ -40,6 +40,10 @@ from xacrodoc import XacroDoc
 
 doc = XacroDoc.from_file("robot.urdf.xacro")
 
+# or relative to a ROS package
+# e.g., for a file located at some_ros_package/urdf/robot.urdf.xacro:
+doc = XacroDoc.from_package_file("some_ros_package", "urdf/robot.urdf.xacro")
+
 # convert to a string of URDF
 urdf_str = doc.to_urdf_string()
 
@@ -73,7 +77,8 @@ doc = XacroDoc.from_includes(includes)
 ```
 
 Finally, we can also pass in substution arguments. For example, suppose our
-file `robot.urdf.xacro` contains the directive `<xacro:arg name="mass" default="1"/>`. On the command line, we could write
+file `robot.urdf.xacro` contains the directive `<xacro:arg name="mass" default="1"/>`.
+On the command line, we could write
 ```
 xacro robot_base.urdf.xacro -o robot_base.urdf mass:=2
 ```
@@ -87,7 +92,7 @@ doc = XacroDoc.from_file("robot.urdf.xacro", subargs={"mass": "2"})
 ## Development
 
 Tests use `pytest`. Ensure that the catkin workspace's setup file has been
-sourced to make the package available.
+sourced to make the package available, then do:
 ```
 cd tests
 pytest .
@@ -99,4 +104,4 @@ PyPI, we use `poetry` and the configuration in `pyproject.toml`.
 
 ## License
 
-MIT
+[MIT](https://github.com/adamheins/xacrodoc/blob/main/LICENSE)

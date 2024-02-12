@@ -1,8 +1,17 @@
 from xacrodoc import XacroDoc
 
 
-def test_compile():
+def test_from_file():
     doc = XacroDoc.from_file("files/threelink.urdf.xacro")
+    with open("files/threelink.urdf") as f:
+        expected = f.read()
+    assert doc.to_urdf_string() == expected
+
+
+def test_from_package_file():
+    doc = XacroDoc.from_package_file(
+        "xacrodoc", "tests/files/threelink.urdf.xacro"
+    )
     with open("files/threelink.urdf") as f:
         expected = f.read()
     assert doc.to_urdf_string() == expected
