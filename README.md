@@ -15,7 +15,7 @@ Why?
   string to build a model, but others (like [PyBullet](https://pybullet.org))
   only load URDFs directly from file paths.
 
-See the documentation [here](https://github.com/adamheins/xacrodoc/blob/main/docs/build/html/).
+See the documentation [here](https://xacrodoc.readthedocs.io/en/latest/).
 
 ## Installation
 

@@ -104,8 +104,8 @@ class XacroDoc:
         The xacro text to compile into a URDF document.
     subargs : dict or None
         Optional dict of substitution arguments; i.e., the values of
-        <xacro:arg ...> directives. Equivalent to writing ``value:=foo`` on the
-        command line.
+        ``<xacro:arg ...>`` directives. Equivalent to writing ``value:=foo`` on
+        the command line.
     max_runs : int
         The text is repeated compiled until a fixed point is reached; i.e.,
         compilation of the text just returns the same text. ``max_runs`` is the
@@ -217,8 +217,11 @@ class XacroDoc:
         Examples
         --------
         Use as a context manager:
-            >>> with doc.temp_urdf_file_path() as path:
-                load_file_from_path(path)
+
+        .. code-block:: python
+
+           with doc.temp_urdf_file_path() as path:
+               load_file_from_path(path)
         """
         fd, path = tempfile.mkstemp(suffix=".urdf")
         try:
