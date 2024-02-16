@@ -15,6 +15,8 @@ Why?
   string to build a model, but others (like [PyBullet](https://pybullet.org))
   only load URDFs directly from file paths.
 
+See the documentation [here](https://github.com/adamheins/xacrodoc/blob/main/docs/build/html/).
+
 ## Installation
 
 xacrodoc requires ROS to be installed on your system with Python 3.
