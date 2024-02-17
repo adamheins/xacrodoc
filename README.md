@@ -19,14 +19,24 @@ See the documentation [here](https://xacrodoc.readthedocs.io/en/latest/).
 
 ## Installation
 
-xacrodoc requires ROS to be installed on your system with Python 3.
+xacrodoc requires at least Python 3.8. Note that ROS *does not* need to be
+installed on the system (the required dependencies will be independently
+installed from PyPI directly). ROS is however required to run all of the tests,
+and xacrodoc can be built as a ROS package in a catkin workspace.
 
 From pip:
 ```
 pip install xacrodoc
 ```
 
-For a source installation, build in a catkin workspace:
+From source, no ROS:
+```
+git clone https://github.com/adamheins/xacrodoc
+cd xacrodoc
+pip install .
+```
+
+From source, with ROS in a catkin workspace:
 ```
 cd catkin_ws/src
 git clone https://github.com/adamheins/xacrodoc
