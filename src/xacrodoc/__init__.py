@@ -1,6 +1,7 @@
 from contextlib import contextmanager
 import os
 from pathlib import Path
+import re
 import tempfile
 
 import rospkg
@@ -17,6 +18,25 @@ def _xacro_header(name):
     return f"""<?xml version="1.0" encoding="utf-8"?>
     <robot name="{name}" xmlns:xacro="http://www.ros.org/wiki/xacro">
     """.strip()
+
+
+def _sub_package_paths(text, pkgpaths):
+    """Substitute package names for their specified paths."""
+    if pkgpaths is None:
+        return text
+
+    for pkg, path in pkgpaths.items():
+        path = Path(path)
+        abspath = path.absolute().as_posix()
+        if not path.exists():
+            raise ValueError("Path {abspath} for package {pkg} does not exist.")
+
+        # replace $(find <pkg>) directives
+        text = re.sub(rf"\$\(find {pkg}\)", abspath, text)
+
+        # replace package://<pkg> file names for meshes
+        text = re.sub(f"package://{pkg}", abspath, text)
+    return text
 
 
 def _xacro_compile(text, subargs=None, max_runs=10):
@@ -38,17 +58,33 @@ def _xacro_compile(text, subargs=None, max_runs=10):
 
     Returns
     -------
-    :
+    : xml.dom.minidom.Document
         The URDF XML document.
     """
     if subargs is None:
         subargs = {}
+    else:
+        try:
+            import roslaunch
+        except ImportError:
+            raise xacro.XacroException(
+                "subargs require roslaunch, but it was not found - is ROS installed?"
+            )
+
     doc = xacro.parse(text)
     s1 = doc.toxml()
 
+    # keep compiling until a fixed point is reached (i.e., the document doesn't
+    # change anymore)
     run = 1
     while run < max_runs:
-        xacro.process_doc(doc, mappings=subargs)
+        try:
+            xacro.process_doc(doc, mappings=subargs)
+        except xacro.XacroException as e:
+            pkg = e.exc.args[0]
+            print(f"ROS package not found: {pkg}")
+            raise
+
         s2 = doc.toxml()
         if s1 == s2:
             break
@@ -74,7 +110,12 @@ def package_path(package_name):
         The package path.
     """
     rospack = rospkg.RosPack()
-    return Path(rospack.get_path(package_name))
+    try:
+        return Path(rospack.get_path(package_name))
+    except rospkg.common.ResourceNotFound as e:
+        pkg = e.args[0]
+        print(f"ROS package not found: {pkg}")
+        raise
 
 
 def package_file_path(package_name, relative_path):

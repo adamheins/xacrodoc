@@ -21,8 +21,10 @@ See the documentation [here](https://xacrodoc.readthedocs.io/en/latest/).
 
 xacrodoc requires at least Python 3.8. Note that ROS *does not* need to be
 installed on the system (the required dependencies will be independently
-installed from PyPI directly). ROS is however required to run all of the tests,
-and xacrodoc can be built as a ROS package in a catkin workspace.
+installed from PyPI directly). ROS is however required for a lot of xacro
+functionality, so you will only be able to process a subset of xacro files on a
+system without ROS (see [below](#ros)). ROS is also required to run all
+of the tests, and xacrodoc can be built as a ROS package in a catkin workspace.
 
 From pip:
 ```
@@ -42,6 +44,14 @@ cd catkin_ws/src
 git clone https://github.com/adamheins/xacrodoc
 catkin build
 ```
+
+## ROS
+
+xacro is currently very dependent on ROS tooling, so much of its functionality
+requires ROS to be installed. ROS is required to parse any file that references
+file paths using ROS package names, for example in `$(find <pkg>)$` directives.
+ROS is also required to when passing any substitution arguments via the
+`subargs` dictionary.
 
 ## Usage
 
