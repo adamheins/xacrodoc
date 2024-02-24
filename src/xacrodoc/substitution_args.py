@@ -139,7 +139,7 @@ def _dirname(resolved, a, args, context):
 
 
 def _eval_find(pkg):
-    return packages.finder.get_path(pkg)
+    return packages.get_path(pkg)
 
 
 def _find(resolved, a, args, context):

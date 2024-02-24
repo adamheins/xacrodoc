@@ -1,15 +1,17 @@
+from pathlib import Path
+
 import pytest
 
 from xacrodoc import XacroDoc, packages
 
 
-def _ros_installed():
-    # check if ROS is installed
-    try:
-        import roslaunch
-    except ImportError:
-        return False
-    return True
+def setup_function():
+    packages.walk_up_from(__file__)
+
+
+def teardown_function():
+    # packages is global state, so we reset it for each test
+    packages.reset()
 
 
 def test_from_file():
@@ -20,10 +22,6 @@ def test_from_file():
 
 
 def test_from_package_file():
-    if not _ros_installed():
-        pytest.skip("ROS is required.")
-
-    packages.finder.walk_up_from(__file__)
     doc = XacroDoc.from_package_file(
         "xacrodoc", "tests/files/threelink.urdf.xacro"
     )
@@ -33,9 +31,6 @@ def test_from_package_file():
 
 
 def test_from_includes():
-    if not _ros_installed():
-        pytest.skip("ROS is required.")
-
     includes = ["files/threelink.urdf.xacro", "files/tool.urdf.xacro"]
     doc = XacroDoc.from_includes(includes, name="combined")
     with open("files/combined.urdf") as f:
@@ -44,9 +39,6 @@ def test_from_includes():
 
 
 def test_from_includes_ros_find():
-    if not _ros_installed():
-        pytest.skip("ROS is required.")
-
     # handle $(find ...) directives
     includes = [
         "$(find xacrodoc)/tests/files/threelink.urdf.xacro",
@@ -59,9 +51,6 @@ def test_from_includes_ros_find():
 
 
 def test_subargs():
-    if not _ros_installed():
-        pytest.skip("ROS is required.")
-
     subargs = {"mass": "2"}
     doc = XacroDoc.from_file("files/tool.urdf.xacro", subargs=subargs)
     with doc.temp_urdf_file_path() as path:
@@ -80,3 +69,11 @@ def test_temp_urdf_file():
     with open("files/threelink.urdf") as f:
         expected = f.read()
     assert text.strip() == expected.strip()
+
+
+def test_resolve_package_name():
+    doc = XacroDoc.from_file("files/mesh.urdf.xacro")
+    expected = Path("files/fakemesh.txt").absolute().as_posix()
+    for element in doc.doc.getElementsByTagName("mesh"):
+        filename = element.getAttribute("filename")
+        assert filename == expected

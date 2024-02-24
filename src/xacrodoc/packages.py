@@ -3,11 +3,16 @@ from xml.dom import minidom
 import rospkg
 
 
+class PackageNotFoundError(Exception):
+    pass
+
+
 class PackageFinder:
     """Utility to find ROS packages.
 
     But without relying too much on ROS infrastructure.
     """
+
     def __init__(self):
         # list of tuples (func, err): func(pkg) looks for the path to package
         # `pkg`, raised error of type `err` if it is not found
@@ -31,16 +36,37 @@ class PackageFinder:
             )
 
     def look_in(self, paths, priority=0):
+        """Add additional directories to search for packages.
+
+        Parameters
+        ----------
+        paths : Iterable
+            A list of paths in which to search for packages. Internally, these
+            are passed to `rospkg.RosPack`.
+        priority : int
+            Priority for the search: lower means the package is looked for
+            using this method earlier.
+        """
         rospack = rospkg.RosPack(ros_paths=paths)
         self.finder_funcs.insert(
             priority, (rospack.get_path, rospkg.common.ResourceNotFound)
         )
 
-    def walk_up_from(self, path):
-        outer_path = Path(path).resolve()
+    def walk_up_from(self, path, priority=0):
+        """Look for packages by walking up the directory tree from ``path``.
+
+        Parameters
+        ----------
+        path : str or pathlib.Path
+            The path at which to start looking for packages.
+        priority : int
+            Priority for the search: lower means the package is looked for
+            using this method earlier.
+        """
+        resolved = Path(path).resolve()
 
         def func(pkg):
-            path = outer_path
+            path = resolved
             while path.as_posix() != path.root:
 
                 # check for package.xml, get the package name from it
@@ -50,27 +76,62 @@ class PackageFinder:
                         doc = minidom.parse(f)
                     names = doc.getElementsByTagName("name")
 
-                    # TODO could be zero if malformed
-                    assert len(names) == 1, "Multiple names in package.xml"
-                    print(f"names = {names}")
+                    if len(names) != 1:
+                        raise ValueError(
+                            f"Excepted one name in {package_xml_path}, but found {len(names)}"
+                        )
                     if names[0].firstChild.data == pkg:
                         return path.as_posix()
 
                 # go up to the next directory
                 path = path.parent
-            raise ValueError("did not find package")
+            raise PackageNotFoundError(pkg)
 
-        self.finder_funcs.append((func, ValueError))
+        self.finder_funcs.insert(priority, (func, PackageNotFoundError))
 
     def get_path(self, pkg):
+        """Attempt to get the path of a package.
+
+        Parameters
+        ----------
+        pkg : str
+            The name of the package.
+
+        Returns
+        -------
+        : str
+            The path to the package.
+
+        Raises
+        ------
+        PackageNotFoundError
+            If the package could not be found.
+        """
         for func, err in self.finder_funcs:
             try:
                 return func(pkg)
             except err:
                 continue
 
-        # TODO use a different error message
-        raise ValueError(f"Could not find package {pkg}.")
+        raise PackageNotFoundError(pkg)
 
 
-finder = PackageFinder()
+# global package finder
+_finder = PackageFinder()
+
+
+def reset():
+    global _finder
+    _finder = PackageFinder()
+
+
+def walk_up_from(path, priority=0):
+    _finder.walk_up_from(path, priority=priority)
+
+
+def look_in(paths, priority=0):
+    _finder.look_in(paths, priority=priority)
+
+
+def get_path(pkg):
+    return _finder.get_path(pkg)
