@@ -1,6 +1,6 @@
 import pytest
 
-from xacrodoc import XacroDoc
+from xacrodoc import XacroDoc, packages
 
 
 def _ros_installed():
@@ -23,6 +23,7 @@ def test_from_package_file():
     if not _ros_installed():
         pytest.skip("ROS is required.")
 
+    packages.finder.walk_up_from(__file__)
     doc = XacroDoc.from_package_file(
         "xacrodoc", "tests/files/threelink.urdf.xacro"
     )

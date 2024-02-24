@@ -5,7 +5,8 @@ import re
 import tempfile
 
 import rospkg
-import xacro
+
+from . import xacro, packages
 
 
 def _xacro_include(path):
@@ -22,6 +23,7 @@ def _xacro_header(name):
 
 def _sub_package_paths(text, pkgpaths):
     """Substitute package names for their specified paths."""
+    # TODO revise this to just rewrite the package:// "protocols"
     if pkgpaths is None:
         return text
 
@@ -63,13 +65,6 @@ def _xacro_compile(text, subargs=None, max_runs=10):
     """
     if subargs is None:
         subargs = {}
-    else:
-        try:
-            import roslaunch
-        except ImportError:
-            raise xacro.XacroException(
-                "subargs require roslaunch, but it was not found - is ROS installed?"
-            )
 
     doc = xacro.parse(text)
     s1 = doc.toxml()
@@ -78,13 +73,7 @@ def _xacro_compile(text, subargs=None, max_runs=10):
     # change anymore)
     run = 1
     while run < max_runs:
-        try:
-            xacro.process_doc(doc, mappings=subargs)
-        except xacro.XacroException as e:
-            pkg = e.exc.args[0]
-            print(f"ROS package not found: {pkg}")
-            raise
-
+        xacro.process_doc(doc, mappings=subargs)  # modifies doc in place
         s2 = doc.toxml()
         if s1 == s2:
             break
@@ -109,13 +98,7 @@ def package_path(package_name):
     : Path
         The package path.
     """
-    rospack = rospkg.RosPack()
-    try:
-        return Path(rospack.get_path(package_name))
-    except rospkg.common.ResourceNotFound as e:
-        pkg = e.args[0]
-        print(f"ROS package not found: {pkg}")
-        raise
+    return Path(packages.finder.get_path(package_name))
 
 
 def package_file_path(package_name, relative_path):

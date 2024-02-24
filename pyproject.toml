@@ -11,7 +11,8 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.8,<3.12"
-xacro = "^1.13.3"
+# xacro = "^1.13.3"
+xacro = { git = "https://github.com/adamheins/xacro.git", branch = "xacrodoc" }
 rospkg = "^1.5.0"
 
 [tool.poetry.group.dev.dependencies]
