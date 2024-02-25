@@ -131,14 +131,20 @@ class XacroDoc:
         )
 
     @classmethod
-    def from_file(cls, path, **kwargs):
+    def from_file(cls, path, walk_up=True, **kwargs):
         """Load the URDF document from a xacro file.
 
         Parameters
         ----------
         path : str or Path
             The path to the xacro file.
+        walk_up : bool
+            If ``True``, look for packages by walking up the directory tree
+            from ``path``.
         """
+        if walk_up:
+            packages.walk_up_from(path)
+
         with open(path) as f:
             text = f.read()
         return cls(text, **kwargs)
