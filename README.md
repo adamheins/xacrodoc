@@ -20,40 +20,24 @@ See the documentation [here](https://xacrodoc.readthedocs.io/en/latest/).
 ## Installation
 
 xacrodoc requires at least Python 3.8. Note that ROS *does not* need to be
-installed on the system (the required dependencies will be independently
-installed from PyPI directly). ROS is however required for a lot of xacro
-functionality, so you will only be able to process a subset of xacro files on a
-system without ROS (see [below](#ros)). ROS is also required to run all
-of the tests, and xacrodoc can be built as a ROS package in a catkin workspace.
+installed on the system, but will also use its infrastructure to look for
+packages if it is available.
 
 From pip:
 ```
 pip install xacrodoc
 ```
 
-From source, no ROS:
+From source:
 ```
 git clone https://github.com/adamheins/xacrodoc
 cd xacrodoc
 pip install .
 ```
 
-From source, with ROS in a catkin workspace:
-```
-cd catkin_ws/src
-git clone https://github.com/adamheins/xacrodoc
-catkin build
-```
-
-## ROS
-
-xacro is currently very dependent on ROS tooling, so much of its functionality
-requires ROS to be installed. ROS is required to parse any file that references
-file paths using ROS package names, for example in `$(find <pkg>)$` directives.
-ROS is also required to when passing any substitution arguments via the
-`subargs` dictionary.
-
 ## Usage
+
+### Basic
 
 A basic use-case of compiling a URDF from a xacro file:
 
@@ -80,14 +64,49 @@ with doc.temp_urdf_file_path() as path:
   # file is cleaned up once context manager is exited
 ```
 
+### Finding ROS packages
+
+xacro files often make use of `$(find <pkg>)` directives to resolve paths
+relative to a given ROS package.
+If ROS is installed on the system, xacrodoc automatically looks for ROS
+packages using the usual ROS infrastructure. If not, or if you are working
+with packages outside of a ROS workspace, you'll need to tell xacrodoc where to
+find packages. There are a few ways to do this:
+
+```python
+import xacrodoc as xd
+
+# `from_file` automatically resolves packages by looking in each parent
+# directory of the given path to check for required ROS packages (as marked by
+# a package.xml file)
+doc = xd.XacroDoc.from_file("robot.urdf.xacro")
+
+# if you want to disable this, pass `walk_up=False`:
+doc = xd.XacroDoc.from_file("robot.urdf.xacro", walk_up=False)
+
+# we can also tell xacrodoc to walk up a directory tree manually
+xd.packages.walk_up_from("some/other/path")
+
+# or we can give paths to directories to search for packages
+# packages can located multiple levels deep from the specified directories,
+# just like in a ROS workspace - the same package # search logic is used (since
+# we actually use rospkg under the hood)
+xd.packages.look_in(["somewhere/I/keep/packages", "another/directory/with/packages"])
+```
+
+### Multiple URDFs
+
 We can also build a URDF programmatically from multiple xacro files:
 
 ```python
-from xacrodoc import XacroDoc
+import xacrodoc as xd
+
+# setup where to look for packages, if needed; for example:
+xd.packages.look_in(["somewhere/I/keep/packages"])
 
 # specify files to compose (using xacro include directives)
 includes = ["robot_base.urdf.xacro", "robot_arm.urdf.xacro", "tool.urdf.xacro"]
-doc = XacroDoc.from_includes(includes)
+doc = xd.XacroDoc.from_includes(includes)
 
 # includes can also use $(find ...) directives:
 includes = [
@@ -95,10 +114,12 @@ includes = [
     "$(find another_ros_package)/urdf/"robot_arm.urdf.xacro",
     "tool.urdf.xacro"
 ]
-doc = XacroDoc.from_includes(includes)
+doc = xd.XacroDoc.from_includes(includes)
 ```
 
-Finally, we can also pass in substution arguments. For example, suppose our
+### Substitution arguments
+
+We can also pass in substution arguments to xacro files. For example, suppose our
 file `robot.urdf.xacro` contains the directive `<xacro:arg name="mass" default="1"/>`.
 On the command line, we could write
 ```
@@ -110,6 +131,15 @@ from xacrodoc import XacroDoc
 
 doc = XacroDoc.from_file("robot.urdf.xacro", subargs={"mass": "2"})
 ```
+
+### Resolving filenames with respect to packages
+
+Finally, one feature of URDF (not just xacro files) is that file names (e.g.,
+for meshes) can be specified relative to a package by using
+`package://<pkg>/relative/path/to/mesh` syntax, which depends on ROS and is not
+supported by other non-ROS tools. xacrodoc automatically expands these
+paths out to full absolute paths, but this can be disabled by passing
+`resolve_packages=False` to the `Xacrodoc` constructor.
 
 ## Development
 

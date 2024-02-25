@@ -198,7 +198,7 @@ class XacroDoc:
             Set to ``True`` to print information about xacro compilation,
             ``False`` otherwise.
         """
-        s = self.to_urdf_string()
+        s = self.to_urdf_string(pretty=True)
 
         # if the full path already exists, we can check if the contents are the
         # same to avoid writing it if it hasn't changed. This avoids some race

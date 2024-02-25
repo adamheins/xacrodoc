@@ -121,17 +121,56 @@ _finder = PackageFinder()
 
 
 def reset():
+    """Reset the package finder to the default look-up methods."""
     global _finder
     _finder = PackageFinder()
 
 
-def walk_up_from(path, priority=0):
-    _finder.walk_up_from(path, priority=priority)
-
-
 def look_in(paths, priority=0):
+    """Add additional directories to search for packages.
+
+    Parameters
+    ----------
+    paths : Iterable
+        A list of paths in which to search for packages. Internally, these are
+        passed to `rospkg.RosPack`.
+    priority : int
+        Priority for the search: lower means the package is looked for using
+        this method earlier.
+    """
     _finder.look_in(paths, priority=priority)
 
 
+def walk_up_from(path, priority=0):
+    """Look for packages by walking up the directory tree from ``path``.
+
+    Parameters
+    ----------
+    path : str or pathlib.Path
+        The path at which to start looking for packages.
+    priority : int
+        Priority for the search: lower means the package is looked for using
+        this method earlier.
+    """
+    _finder.walk_up_from(path, priority=priority)
+
+
 def get_path(pkg):
+    """Attempt to get the path of a package.
+
+    Parameters
+    ----------
+    pkg : str
+        The name of the package.
+
+    Returns
+    -------
+    : str
+        The path to the package.
+
+    Raises
+    ------
+    PackageNotFoundError
+        If the package could not be found.
+    """
     return _finder.get_path(pkg)
