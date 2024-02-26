@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<!-- Dummy package.xml so that ROS tools can identify this as a package. -->
+<package format="2">
+  <name>xacrodoc</name>
+  <version>0.2.0</version>
+  <description>Programmatically compile xacro files.</description>
+  <maintainer email="mail@adamheins.com">Adam Heins</maintainer>
+  <author>Adam Heins</author>
+  <url>https://github.com/adamheins/xacrodoc</url>
+  <license>MIT</license>
+
+  <exec_depend>python-rospkg</exec_depend>
+
+  <test_depend>python-pytest</test_depend>
+
+  <buildtool_depend>catkin</buildtool_depend>
+</package>
