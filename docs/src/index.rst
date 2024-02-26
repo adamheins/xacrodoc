@@ -1,7 +1,7 @@
 xacrodoc
 ========
 
-Programmatically compile xacro files.
+Programmatically compile xacro files (without ROS).
 
 .. toctree::
    :maxdepth: 1
