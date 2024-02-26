@@ -30,7 +30,7 @@ def _resolve_package_protocol(text):
     return text
 
 
-def _xacro_compile(text, subargs=None, max_runs=10, resolve_packages=True):
+def _compile_xacro_file(text, subargs=None, max_runs=10, resolve_packages=True):
     """Compile xacro string until a fixed point is reached.
 
     Parameters
@@ -81,25 +81,6 @@ def _xacro_compile(text, subargs=None, max_runs=10, resolve_packages=True):
     return doc
 
 
-def package_file_path(package_name, relative_path):
-    """Get the path to a file within a ROS package.
-
-    Parameters
-    ----------
-    package_name : str
-        The name of the ROS package.
-    relative_path : str or Path
-        The path of the file relative to the package root.
-
-    Returns
-    -------
-    : Path
-        The file path.
-    """
-    pkgpath = Path(packages.get_path(package_name))
-    return pkgpath / relative_path
-
-
 class XacroDoc:
     """Convenience class to build URDF strings and files out of xacro components.
 
@@ -123,7 +104,7 @@ class XacroDoc:
     """
 
     def __init__(self, text, subargs=None, max_runs=10, resolve_packages=True):
-        self.doc = _xacro_compile(
+        self.doc = _compile_xacro_file(
             text=text,
             subargs=subargs,
             max_runs=max_runs,
@@ -160,7 +141,7 @@ class XacroDoc:
         relative_path : str or Path
             The path of the xacro file relative to the ROS package.
         """
-        path = package_file_path(package_name, relative_path)
+        path = packages.get_file_path(package_name, relative_path)
         return cls.from_file(path, **kwargs)
 
     @classmethod

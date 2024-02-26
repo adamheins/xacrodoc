@@ -30,6 +30,8 @@
 # Authors: Stuart Glaser, William Woodall, Robert Haschke
 # Maintainer: Morgan Quigley <morgan@osrfoundation.org>
 
+"""This file comes from ros/xacro/src/xacro/xmlutils.py."""
+
 import xml.dom.minidom
 
 

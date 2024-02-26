@@ -30,6 +30,11 @@
 # Authors: Stuart Glaser, William Woodall, Robert Haschke
 # Maintainer: Morgan Quigley <morgan@osrfoundation.org>
 
+"""Main xacro file.
+
+This file has been modified from ros/xacro/src/xacro/__init__.py.
+"""
+
 import ast
 import glob
 import math

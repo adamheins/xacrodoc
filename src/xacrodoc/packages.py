@@ -174,3 +174,23 @@ def get_path(pkg):
         If the package could not be found.
     """
     return _finder.get_path(pkg)
+
+
+def get_file_path(pkg, relative_path):
+    """Get the path to a file within a ROS package.
+
+    Parameters
+    ----------
+    pkg : str
+        The name of the ROS package.
+    relative_path : str or Path
+        The path of the file relative to the package root.
+
+    Returns
+    -------
+    : str
+        The file path.
+    """
+    pkgpath = Path(get_path(pkg))
+    filepath = pkgpath / relative_path
+    return filepath.as_posix()

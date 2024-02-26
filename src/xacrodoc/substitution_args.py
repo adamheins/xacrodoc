@@ -35,6 +35,8 @@ Library for processing XML substitution args.
 
 This is currently used by roslaunch and xacro, but it is not yet a top-level ROS feature.
 This file has been modified from ros_comm/tools/roslaunch/src/roslaunch/substitution_args.py
+
+This file has been further modified from ros/xacro/src/xacro/substitution_args.py.
 """
 
 import math
