@@ -65,12 +65,12 @@ class PackageFinder:
         """
         resolved = Path(path).resolve()
 
-        def func(pkg):
+        def finder_func(pkg):
             path = resolved
             while path.as_posix() != path.root:
 
                 # check for package.xml, get the package name from it
-                package_xml_path = path / "package.xml"
+                package_xml_path = path / rospkg.common.PACKAGE_FILE
                 if package_xml_path.exists():
                     with open(package_xml_path) as f:
                         doc = minidom.parse(f)
@@ -78,16 +78,22 @@ class PackageFinder:
 
                     if len(names) != 1:
                         raise ValueError(
-                            f"Excepted one name in {package_xml_path}, but found {len(names)}"
+                            f"Expected one name in {package_xml_path}, but found {len(names)}"
                         )
                     if names[0].firstChild.data == pkg:
                         return path.as_posix()
+
+                # check for manifest.xml (used in the old, deprecated rosbuild
+                # system); if it exists, the package name is the directory name
+                manifest_xml_path = path / rospkg.common.MANIFEST_FILE
+                if manifest_xml_path.exists():
+                    return path.as_posix()
 
                 # go up to the next directory
                 path = path.parent
             raise PackageNotFoundError(pkg)
 
-        self.finder_funcs.insert(priority, (func, PackageNotFoundError))
+        self.finder_funcs.insert(priority, (finder_func, PackageNotFoundError))
 
     def get_path(self, pkg):
         """Attempt to get the path of a package.
