@@ -141,18 +141,18 @@ supported by other non-ROS tools. xacrodoc automatically expands these
 paths out to full absolute paths, but this can be disabled by passing
 `resolve_packages=False` to the `Xacrodoc` constructor.
 
-## Development
+## Testing
 
-Tests use `pytest`. Ensure that the catkin workspace's setup file has been
-sourced to make the package available, then do:
+Tests use `pytest`. Some tests depend on additional submodules, which you can
+clone using:
+```
+git submodule update --init --recursive
+```
+Then do:
 ```
 cd tests
 pytest .
 ```
-
-For local testing, the project needs to be built as a ROS package in a catkin
-workspace, which uses the `setup.py` file. For building and publishing to
-PyPI, we use `poetry` and the configuration in `pyproject.toml`.
 
 ## License
 

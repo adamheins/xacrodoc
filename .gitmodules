@@ -1,0 +1,6 @@
+[submodule "tests/packages/iit-walkman-ros-pkg"]
+	path = tests/packages/iit-walkman-ros-pkg
+	url = https://github.com/ADVRHumanoids/iit-walkman-ros-pkg.git
+[submodule "tests/packages/Universal_Robots_ROS2_Description"]
+	path = tests/packages/Universal_Robots_ROS2_Description
+	url = https://github.com/UniversalRobots/Universal_Robots_ROS2_Description.git

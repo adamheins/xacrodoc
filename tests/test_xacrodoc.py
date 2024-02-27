@@ -5,14 +5,14 @@ import pytest
 from xacrodoc import XacroDoc, packages
 
 
-def setup_function():
-    packages.walk_up_from(__file__)
-
-
-def teardown_function():
-    # packages is global state, so we reset it for each test
-    packages.reset()
-
+# def setup_function():
+#     packages.walk_up_from(__file__)
+#
+#
+# def teardown_function():
+#     # packages is global state, so we reset it for each test
+#     packages.reset()
+#
 
 def test_from_file():
     doc = XacroDoc.from_file("files/threelink.urdf.xacro")
