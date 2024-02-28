@@ -1,13 +1,15 @@
 # xacrodoc
 
 xacrodoc is a tool for programmatically compiling
-[xacro](https://github.com/ros/xacro)'d URDF files.
+[xacro](https://github.com/ros/xacro)'d URDF files. It is fully functional
+whether ROS is installed on the system or not.
 
 Why?
 
+* Compile xacro files without a ROS installation.
 * Avoid the clutter of redundant compiled raw URDFs; only keep the xacro
   source files.
-* Programmatically compose multiple xacro files and apply subtitution
+* Programmatically compose multiple xacro files and apply substitution
   arguments to build a flexible URDF model.
 * Convenient interfaces to provide URDF strings and URDF file paths as needed.
   For example, many libraries (such as
@@ -20,8 +22,8 @@ See the documentation [here](https://xacrodoc.readthedocs.io/en/latest/).
 ## Installation
 
 xacrodoc requires at least Python 3.8. Note that ROS *does not* need to be
-installed on the system, but will also use its infrastructure to look for
-packages if it is available.
+installed on the system, but xacrodoc will also use its infrastructure to look
+for packages if it is available.
 
 From pip:
 ```
@@ -119,7 +121,7 @@ doc = xd.XacroDoc.from_includes(includes)
 
 ### Substitution arguments
 
-We can also pass in substution arguments to xacro files. For example, suppose our
+We can also pass in substitution arguments to xacro files. For example, suppose our
 file `robot.urdf.xacro` contains the directive `<xacro:arg name="mass" default="1"/>`.
 On the command line, we could write
 ```
@@ -132,7 +134,7 @@ from xacrodoc import XacroDoc
 doc = XacroDoc.from_file("robot.urdf.xacro", subargs={"mass": "2"})
 ```
 
-### Resolving filenames with respect to packages
+### Resolving file names with respect to packages
 
 Finally, one feature of URDF (not just xacro files) is that file names (e.g.,
 for meshes) can be specified relative to a package by using
