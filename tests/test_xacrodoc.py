@@ -5,15 +5,6 @@ import pytest
 from xacrodoc import XacroDoc, packages
 
 
-# def setup_function():
-#     packages.walk_up_from(__file__)
-#
-#
-# def teardown_function():
-#     # packages is global state, so we reset it for each test
-#     packages.reset()
-#
-
 def test_from_file():
     doc = XacroDoc.from_file("files/threelink.urdf.xacro")
     with open("files/threelink.urdf") as f:
@@ -77,3 +68,12 @@ def test_resolve_package_name():
     for element in doc.doc.getElementsByTagName("mesh"):
         filename = element.getAttribute("filename")
         assert filename == expected
+
+
+def test_include_from_arg():
+    # just see if this can compile
+    # we want to ensure that $(find) can be nested in an $(arg)
+    doc = XacroDoc.from_file(
+        "files/combined_from_arg.urdf.xacro",
+        subargs={"robotfile": "$(find xacrodoc)/tests/files/threelink.urdf.xacro"},
+    )
