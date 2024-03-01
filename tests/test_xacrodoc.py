@@ -5,6 +5,11 @@ import pytest
 from xacrodoc import XacroDoc, packages
 
 
+def setup_function():
+    # ensures packages are reset before each test
+    packages.reset()
+
+
 def test_from_file():
     doc = XacroDoc.from_file("files/threelink.urdf.xacro")
     with open("files/threelink.urdf") as f:
@@ -13,6 +18,7 @@ def test_from_file():
 
 
 def test_from_package_file():
+    packages.walk_up_from(__file__)
     doc = XacroDoc.from_package_file(
         "xacrodoc", "tests/files/threelink.urdf.xacro"
     )
@@ -30,6 +36,8 @@ def test_from_includes():
 
 
 def test_from_includes_ros_find():
+    packages.walk_up_from(__file__)
+
     # handle $(find ...) directives
     includes = [
         "$(find xacrodoc)/tests/files/threelink.urdf.xacro",
@@ -75,5 +83,17 @@ def test_include_from_arg():
     # we want to ensure that $(find) can be nested in an $(arg)
     doc = XacroDoc.from_file(
         "files/combined_from_arg.urdf.xacro",
-        subargs={"robotfile": "$(find xacrodoc)/tests/files/threelink.urdf.xacro"},
+        subargs={
+            "robotfile": "$(find xacrodoc)/tests/files/threelink.urdf.xacro"
+        },
     )
+
+
+def test_package_cache():
+    # manually specify a (non-resolved) path to xacrodoc and disable walking up
+    # the directory tree
+    packages.update_package_cache({"xacrodoc": "../.."})
+    doc = XacroDoc.from_file("files/threelink.urdf.xacro", walk_up=False)
+    with open("files/threelink.urdf") as f:
+        expected = f.read()
+    assert doc.to_urdf_string().strip() == expected.strip()

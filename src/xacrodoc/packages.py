@@ -18,6 +18,8 @@ class PackageFinder:
         # `pkg`, raised error of type `err` if it is not found
         self.finder_funcs = []
 
+        self.package_cache = {}
+
         try:
             # ament (ROS 2)
             from ament_index_python.packages import (
@@ -113,13 +115,35 @@ class PackageFinder:
         PackageNotFoundError
             If the package could not be found.
         """
+        # try the cache first
+        if pkg in self.package_cache:
+            return self.package_cache[pkg]
+
+        # otherwise try a lookup
         for func, err in self.finder_funcs:
             try:
-                return func(pkg)
+                path = func(pkg)
+                self.package_cache[pkg] = path  # add to cache
+                return path
             except err:
                 continue
 
         raise PackageNotFoundError(pkg)
+
+    def update_package_cache(self, pkgpaths):
+        """Update the package cache.
+
+        Parameters
+        ----------
+        pkgpaths : dict
+            Map from package names to package paths. The paths are resolved,
+            made absolute, and converted to strings.
+        """
+        pkgpaths = {
+            pkg: Path(path).resolve().absolute().as_posix()
+            for pkg, path in pkgpaths.items()
+        }
+        self.package_cache.update(pkgpaths)
 
 
 # global package finder
@@ -200,3 +224,14 @@ def get_file_path(pkg, relative_path):
     pkgpath = Path(get_path(pkg))
     filepath = pkgpath / relative_path
     return filepath.as_posix()
+
+
+def update_package_cache(pkgpaths):
+    """Update the package cache.
+
+    Parameters
+    ----------
+    pkgpaths : dict
+        Map from package names to absolute package paths as strings.
+    """
+    _finder.update_package_cache(pkgpaths)
