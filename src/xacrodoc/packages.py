@@ -4,6 +4,7 @@ import rospkg
 
 
 class PackageNotFoundError(Exception):
+    """Raised when a package could not be found."""
     pass
 
 
@@ -229,9 +230,14 @@ def get_file_path(pkg, relative_path):
 def update_package_cache(pkgpaths):
     """Update the package cache.
 
+    This allows the user to manually specify the location of packages on the
+    filesystem. The path does not actually need to be a proper ROS package,
+    meaning that there is no need to have a package.xml file there.
+
     Parameters
     ----------
     pkgpaths : dict
-        Map from package names to absolute package paths as strings.
+        Map from package names to package paths. The paths are resolved,
+        made absolute, and converted to strings.
     """
     _finder.update_package_cache(pkgpaths)
