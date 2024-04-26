@@ -1,8 +1,8 @@
 # xacrodoc
 
 xacrodoc is a tool for programmatically compiling
-[xacro](https://github.com/ros/xacro)'d URDF files. It is fully functional
-whether ROS is installed on the system or not.
+[xacro](https://github.com/ros/xacro) files to plain URDF files. It is fully
+functional whether ROS is installed on the system or not.
 
 Why?
 
@@ -69,11 +69,10 @@ with doc.temp_urdf_file_path() as path:
 ### Finding ROS packages
 
 xacro files often make use of `$(find <pkg>)` directives to resolve paths
-relative to a given ROS package.
-If ROS is installed on the system, xacrodoc automatically looks for ROS
-packages using the usual ROS infrastructure. If not, or if you are working
-with packages outside of a ROS workspace, you'll need to tell xacrodoc where to
-find packages. There are a few ways to do this:
+relative to a given ROS package. If ROS is installed on the system, xacrodoc
+automatically looks for ROS packages using the usual ROS infrastructure. If
+not, or if you are working with packages outside of a ROS workspace, you'll
+need to tell xacrodoc where to find packages. There are a few ways to do this:
 
 ```python
 import xacrodoc as xd
@@ -90,8 +89,8 @@ doc = xd.XacroDoc.from_file("robot.urdf.xacro", walk_up=False)
 xd.packages.walk_up_from("some/other/path")
 
 # or we can give paths to directories to search for packages
-# packages can located multiple levels deep from the specified directories,
-# just like in a ROS workspace - the same package # search logic is used (since
+# packages can be located multiple levels deep from the specified directories,
+# just like in a ROS workspace - the same package search logic is used (since
 # we actually use rospkg under the hood)
 xd.packages.look_in(["somewhere/I/keep/packages", "another/directory/with/packages"])
 ```
