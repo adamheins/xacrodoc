@@ -23,7 +23,7 @@ def _xacro_header(name):
 
 def _resolve_package_protocol(text):
     """Resolve file names for meshes specified using `package://`"""
-    pkg_names = re.findall(r"package://(\w+)", text)
+    pkg_names = re.findall(r"package://([\w-]+)", text)
     for pkg in pkg_names:
         abspath = Path(packages.get_path(pkg)).absolute().as_posix()
         text = re.sub(f"package://{pkg}", abspath, text)
