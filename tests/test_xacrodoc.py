@@ -70,6 +70,32 @@ def test_temp_urdf_file():
     assert text.strip() == expected.strip()
 
 
+def test_resolve_packages():
+    from xacrodoc.xacrodoc import _resolve_package_protocol
+
+    packages.update_package_cache(
+        {
+            "xacrodoc": "..",
+            "example-robot-data": "..",
+            "robot_description": "..",
+        }
+    )
+
+    text = """
+package://xacrodoc/tests/files/threelink.urdf.xacro
+package://example-robot-data/tests/files/threelink.urdf.xacro
+package://robot_description/tests/files/threelink.urdf.xacro
+"""
+    absolute_path = Path("files/threelink.urdf.xacro").absolute().as_posix()
+    expected = f"""
+{absolute_path}
+{absolute_path}
+{absolute_path}
+"""
+    resolved = _resolve_package_protocol(text)
+    assert resolved.strip() == expected.strip()
+
+
 def test_resolve_package_name():
     doc = XacroDoc.from_file("files/mesh.urdf.xacro")
     expected = Path("files/fakemesh.txt").absolute().as_posix()
