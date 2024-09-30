@@ -73,6 +73,8 @@ def test_temp_urdf_file():
 def test_resolve_packages():
     from xacrodoc.xacrodoc import _resolve_package_protocol
 
+    # spoof package paths so these all point to the same package (this one)
+    # want to test hyphens and underscores in the package names
     packages.update_package_cache(
         {
             "xacrodoc": "..",
@@ -81,11 +83,14 @@ def test_resolve_packages():
         }
     )
 
+    # some text with package protocols
     text = """
 package://xacrodoc/tests/files/threelink.urdf.xacro
 package://example-robot-data/tests/files/threelink.urdf.xacro
 package://robot_description/tests/files/threelink.urdf.xacro
 """
+
+    # all package protocols should resolve to the same absolute path
     absolute_path = Path("files/threelink.urdf.xacro").absolute().as_posix()
     expected = f"""
 {absolute_path}
