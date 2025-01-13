@@ -17,6 +17,9 @@ rospkg = "^1.5.0"
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.0"
 
+[tool.poetry.scripts]
+xacrodoc = "xacrodoc.cli:main"
+
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"

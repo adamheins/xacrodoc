@@ -18,7 +18,7 @@ def test_walkman():
 
 
 def test_ur():
-    # this is a recent packages that makes heavy use of substitutions and other
+    # this is a recent package that makes heavy use of substitutions and other
     # modern xacro features
     ur_urdf_path = Path("packages/Universal_Robots_ROS2_Description/urdf")
     if not ur_urdf_path.exists():
