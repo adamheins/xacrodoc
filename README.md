@@ -10,9 +10,9 @@ Why?
 * Avoid the clutter of redundant compiled raw URDFs; only keep the xacro
   source files.
 * Programmatically compose multiple xacro files and apply substitution
-  arguments to build a flexible URDF model.
-* Convenient interfaces to provide URDF strings and URDF file paths as needed.
-  For example, many libraries (such as
+  arguments to build a flexible URDF model directly in your code.
+* Convenient interfaces to provide URDF strings and (temporary) URDF file paths
+  as needed. For example, many libraries (such as
   [Pinocchio](https://github.com/stack-of-tasks/pinocchio)) accept a URDF
   string to build a model, but others (like [PyBullet](https://pybullet.org))
   only load URDFs directly from file paths.
@@ -64,6 +64,12 @@ doc.to_urdf_file("robot.urdf")
 with doc.temp_urdf_file_path() as path:
   # do stuff with URDF file located at `path`...
   # file is cleaned up once context manager is exited
+
+# you can also manage the temp file yourself if you don't want to clean it up
+# right away
+path = doc.to_temp_urdf_file()
+# ...do stuff with path...
+# ...manually delete the temp file
 ```
 
 ### Finding ROS packages

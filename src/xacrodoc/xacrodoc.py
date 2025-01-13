@@ -198,6 +198,18 @@ class XacroDoc:
         with open(path, "w") as f:
             f.write(s)
 
+    def to_temp_urdf_file(self):
+        """Write the URDF to a temporary file.
+
+        Returns
+        -------
+        : str
+            The path to the temporary URDF file.
+        """
+        fd, path = tempfile.mkstemp(suffix=".urdf")
+        self.to_urdf_file(path, compare_existing=False, verbose=False)
+        return path
+
     @contextmanager
     def temp_urdf_file_path(self, verbose=False):
         """Get the context of a temporary URDF file path.

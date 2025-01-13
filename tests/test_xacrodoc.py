@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import pytest
@@ -62,11 +63,34 @@ def test_subargs():
 
 def test_temp_urdf_file():
     doc = XacroDoc.from_file("files/threelink.urdf.xacro")
+
+    # write to a temporary file and read back
+    path = doc.to_temp_urdf_file()
+    with open(path) as f:
+        text = f.read()
+
+    # clean up the temp file
+    os.remove(path)
+
+    # compare to expected URDF
+    with open("files/threelink.urdf") as f:
+        expected = f.read()
+
+    assert text.strip() == expected.strip()
+
+
+def test_temp_urdf_file_path():
+    doc = XacroDoc.from_file("files/threelink.urdf.xacro")
+
+    # write to a temporary file and read back
     with doc.temp_urdf_file_path() as path:
         with open(path) as f:
             text = f.read()
+
+    # compare to expected URDF
     with open("files/threelink.urdf") as f:
         expected = f.read()
+
     assert text.strip() == expected.strip()
 
 
