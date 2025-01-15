@@ -41,6 +41,9 @@ def _compile_xacro_file(text, subargs=None, max_runs=10, resolve_packages=True):
         Optional dictionary of substitution arguments to pass into xacro.
     max_runs : int
         Maximum number of compilation runs.
+    resolve_packages : bool
+        If ``True``, resolve package protocol URIs in the compiled URDF.
+        Otherwise, they are left unchanged.
 
     Raises
     ------
@@ -96,6 +99,9 @@ class XacroDoc:
         The text is repeated compiled until a fixed point is reached; i.e.,
         compilation of the text just returns the same text. ``max_runs`` is the
         maximum number of times compilation will be performed.
+    resolve_packages : bool
+        If ``True``, resolve package protocol URIs in the compiled URDF.
+        Otherwise, they are left unchanged.
 
     Attributes
     ----------
@@ -198,16 +204,25 @@ class XacroDoc:
         with open(path, "w") as f:
             f.write(s)
 
-    def to_temp_urdf_file(self):
+    def to_temp_urdf_file(self, verbose=False):
         """Write the URDF to a temporary file.
+
+        Clean-up is left to the user. If you want the tempfile to be
+        automatically deleted, use the context manager ``temp_urdf_file_path``.
+
+        Parameters
+        ----------
+        verbose : bool
+            Set to ``True`` to print information about xacro compilation,
+            ``False`` otherwise.
 
         Returns
         -------
         : str
             The path to the temporary URDF file.
         """
-        fd, path = tempfile.mkstemp(suffix=".urdf")
-        self.to_urdf_file(path, compare_existing=False, verbose=False)
+        _, path = tempfile.mkstemp(suffix=".urdf")
+        self.to_urdf_file(path, compare_existing=False, verbose=verbose)
         return path
 
     @contextmanager
@@ -232,7 +247,7 @@ class XacroDoc:
            with doc.temp_urdf_file_path() as path:
                load_file_from_path(path)
         """
-        fd, path = tempfile.mkstemp(suffix=".urdf")
+        _, path = tempfile.mkstemp(suffix=".urdf")
         try:
             self.to_urdf_file(path, compare_existing=False, verbose=verbose)
             yield path

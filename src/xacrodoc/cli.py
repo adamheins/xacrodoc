@@ -1,5 +1,7 @@
 import argparse
+import sys
 
+from .color import error
 from .packages import look_in, PackageNotFoundError
 from .xacro import XacroException
 from .xacrodoc import XacroDoc
@@ -39,19 +41,20 @@ def main():
     try:
         doc = XacroDoc.from_file(args.xacro_file, subargs=subargs)
     except PackageNotFoundError as e:
-        print(f"Error: package not found: {e}")
+        error(f"Error: package not found: {e}")
         print("You can specify additional package directories with --pkg-dir")
-        return
-    except XacroException as e:
-        print(f"Error: {e}")
-        return
+        return 1
+    except Exception as e:
+        error(f"Error: {e}")
+        return 1
 
     # output
     if args.output:
         doc.to_urdf_file(args.output, compare_existing=False)
     else:
         print(doc.to_urdf_string())
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
