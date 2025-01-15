@@ -37,7 +37,7 @@ cd xacrodoc
 pip install .
 ```
 
-## Usage
+## Python Usage
 
 ### Basic
 
@@ -147,6 +147,25 @@ for meshes) can be specified relative to a package by using
 supported by other non-ROS tools. xacrodoc automatically expands these
 paths out to full absolute paths, but this can be disabled by passing
 `resolve_packages=False` to the `Xacrodoc` constructor.
+
+## Command Line Usage
+
+In addition to the Python API described above, this packages also includes a
+`xacrodoc` command line tool. It is similar to `xacro`, except that directories
+in which to search for packages can be provided manually. Examples:
+```
+# compile and print to stdout
+xacrodoc input.urdf.xacro
+
+# compile and output to provided output file
+xacrodoc input.urdf.xacro -o output.urdf
+
+# provide directories in which to look for packages referenced in input.urdf.xacro
+xacrodoc input.urdf.xacro -d ~/my_pkg_dir ~/my_other_pkg_dir
+
+# substitution arguments use := notation, like xacro
+xacrodoc input.urdf.xacro mass:=1
+```
 
 ## Testing
 
