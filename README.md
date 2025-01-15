@@ -26,12 +26,12 @@ installed on the system, but xacrodoc will also use its infrastructure to look
 for packages if it is available.
 
 From pip:
-```
+```sh
 pip install xacrodoc
 ```
 
 From source:
-```
+```sh
 git clone https://github.com/adamheins/xacrodoc
 cd xacrodoc
 pip install .
@@ -153,7 +153,7 @@ paths out to full absolute paths, but this can be disabled by passing
 In addition to the Python API described above, this packages also includes a
 `xacrodoc` command line tool. It is similar to `xacro`, except that directories
 in which to search for packages can be provided manually. Examples:
-```
+```sh
 # compile and print to stdout
 xacrodoc input.urdf.xacro
 
