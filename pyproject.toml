@@ -3,7 +3,7 @@ line-length = 80
 
 [tool.poetry]
 name = "xacrodoc"
-version = "0.4.1"
+version = "0.5.0"
 description = "Programmatically compile xacro files."
 authors = ["Adam Heins <mail@adamheins.com>"]
 license = "MIT"
