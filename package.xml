@@ -2,7 +2,7 @@
 <!-- Dummy package.xml so that ROS tools can identify this as a package. -->
 <package format="2">
   <name>xacrodoc</name>
-  <version>0.4.0</version>
+  <version>0.6.0</version>
   <description>Programmatically compile xacro files.</description>
   <maintainer email="mail@adamheins.com">Adam Heins</maintainer>
   <author>Adam Heins</author>
