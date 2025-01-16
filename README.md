@@ -167,6 +167,11 @@ xacrodoc input.urdf.xacro -d ~/my_pkg_dir ~/my_other_pkg_dir
 xacrodoc input.urdf.xacro mass:=1
 ```
 
+It is recommended to install the command line tool using [pipx](https://pipx.pypa.io):
+```
+pipx install xacrodoc
+```
+
 ## Testing
 
 Tests use `pytest`. Some tests depend on additional submodules, which you can
