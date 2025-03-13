@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 import re
 import tempfile
+from xml.dom.minidom import parseString
 
 import rospkg
 
@@ -26,11 +27,17 @@ def _resolve_package_protocol(text):
     pkg_names = re.findall(r"package://([\w-]+)", text)
     for pkg in pkg_names:
         abspath = Path(packages.get_path(pkg)).absolute().as_posix()
-        text = re.sub(f"package://{pkg}", abspath, text)
+        text = re.sub(f"package://{pkg}", f"file://{abspath}", text)
     return text
 
 
-def _compile_xacro_file(text, subargs=None, max_runs=10, resolve_packages=True):
+def _compile_xacro_file(
+    text,
+    subargs=None,
+    max_runs=10,
+    resolve_packages=True,
+    remove_protocols=False,
+):
     """Compile xacro string until a fixed point is reached.
 
     Parameters
@@ -75,10 +82,15 @@ def _compile_xacro_file(text, subargs=None, max_runs=10, resolve_packages=True):
     if run >= max_runs:
         raise ValueError("URDF file did not converge.")
 
-    if resolve_packages:
+    if resolve_packages or remove_protocols:
         # TODO could perhaps be more clever than converting from and back to
         # XML
-        text = _resolve_package_protocol(doc.toxml())
+        text = doc.toxml()
+        if resolve_packages:
+            text = _resolve_package_protocol(text)
+        if remove_protocols:
+            text = re.sub(f"file://", "", text)
+
         doc = xacro.parse(text)
 
     return doc
@@ -109,12 +121,20 @@ class XacroDoc:
         The underlying XML document.
     """
 
-    def __init__(self, text, subargs=None, max_runs=10, resolve_packages=True):
+    def __init__(
+        self,
+        text,
+        subargs=None,
+        max_runs=10,
+        resolve_packages=True,
+        remove_protocols=False,
+    ):
         self.doc = _compile_xacro_file(
             text=text,
             subargs=subargs,
             max_runs=max_runs,
             resolve_packages=resolve_packages,
+            remove_protocols=remove_protocols,
         )
 
     @classmethod
@@ -168,6 +188,48 @@ class XacroDoc:
             s += _xacro_include(incl)
         s += "</robot>"
         return cls(s, **kwargs)
+
+    def add_mujoco_extension(self):
+        """Modify the document to conversion to Mujoco MJCF XML format.
+
+        Currently this sets the strippath compiler attribute to false, so that
+        full paths can be used for meshes.
+        """
+        mujoco_nodes = self.doc.getElementsByTagName("mujoco")
+        if len(mujoco_nodes) > 1:
+            raise ValueError("Multiple <mujoco> elements found.")
+        if len(mujoco_nodes) == 0:
+            mujoco_node = self.doc.createElement("mujoco")
+            self.doc.documentElement.appendChild(mujoco_node)
+        else:
+            mujoco_node = mujoco_nodes[0]
+
+        compiler_nodes = mujoco_node.getElementsByTagName("compiler")
+        if len(compiler_nodes) > 1:
+            raise ValueError("Multiple <compiler> elements found.")
+        if len(compiler_nodes) == 0:
+            compiler_node = self.doc.createElement("compiler")
+            mujoco_node.appendChild(compiler_node)
+        else:
+            compiler_node = compiler_nodes[0]
+
+        compiler_node.setAttribute("strippath", "false")
+
+    def to_mjcf_file(self, path):
+        """Convert and write to a Mujoco MJCF XML file.
+
+        This requires mujoco module to be installed and available for import.
+
+        Parameters
+        ----------
+        path : str or Path
+            The path to the MJCF XML file to be written.
+        """
+        import mujoco
+
+        urdf_str = self.to_urdf_string()
+        model = mujoco.MjModel.from_xml_string(urdf_str)
+        mujoco.mj_saveLastXML(path, model)
 
     def to_urdf_file(self, path, compare_existing=True, verbose=False):
         """Write the URDF to a file.
