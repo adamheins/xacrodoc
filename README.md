@@ -1,12 +1,13 @@
 # xacrodoc
 
 xacrodoc is a tool for programmatically compiling
-[xacro](https://github.com/ros/xacro) files to plain URDF files. It is fully
-functional whether ROS is installed on the system or not.
+[xacro](https://github.com/ros/xacro) files to plain URDF files or Mujoco MJCF
+files. It is fully functional whether ROS is installed on the system or not.
 
 Why?
 
 * Compile xacro files without a ROS installation.
+* Convert xacro files to Mujoco MJCF files.
 * Avoid the clutter of redundant compiled raw URDFs; only keep the xacro
   source files.
 * Programmatically compose multiple xacro files and apply substitution
