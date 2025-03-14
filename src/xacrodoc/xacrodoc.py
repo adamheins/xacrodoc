@@ -51,6 +51,9 @@ def _compile_xacro_file(
     resolve_packages : bool
         If ``True``, resolve package protocol URIs in the compiled URDF.
         Otherwise, they are left unchanged.
+    remove_protocols : bool
+        If ``True``, remove file:// protocols in the compiled URDF.
+        Otherwise, they are left unchanged.
 
     Raises
     ------
@@ -113,6 +116,9 @@ class XacroDoc:
         maximum number of times compilation will be performed.
     resolve_packages : bool
         If ``True``, resolve package protocol URIs in the compiled URDF.
+        Otherwise, they are left unchanged.
+    remove_protocols : bool
+        If ``True``, remove file:// protocols in the compiled URDF.
         Otherwise, they are left unchanged.
 
     Attributes
@@ -226,6 +232,8 @@ class XacroDoc:
             The path to the MJCF XML file to be written.
         """
         import mujoco
+
+        path = Path(path).as_posix()
 
         urdf_str = self.to_urdf_string()
         model = mujoco.MjModel.from_xml_string(urdf_str)

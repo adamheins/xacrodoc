@@ -7,6 +7,10 @@ from xacrodoc import XacroDoc, packages
 
 
 def setup_function():
+    # make sure we are working in the `tests` directory
+    dir = os.path.dirname(os.path.realpath(__file__))
+    os.chdir(dir)
+
     # ensures packages are reset before each test
     packages.reset()
 
@@ -117,9 +121,9 @@ package://robot_description/tests/files/threelink.urdf.xacro
     # all package protocols should resolve to the same absolute path
     absolute_path = Path("files/threelink.urdf.xacro").absolute().as_posix()
     expected = f"""
-{absolute_path}
-{absolute_path}
-{absolute_path}
+file://{absolute_path}
+file://{absolute_path}
+file://{absolute_path}
 """
     resolved = _resolve_package_protocol(text)
     assert resolved.strip() == expected.strip()
@@ -127,6 +131,14 @@ package://robot_description/tests/files/threelink.urdf.xacro
 
 def test_resolve_package_name():
     doc = XacroDoc.from_file("files/mesh.urdf.xacro")
+    expected = "file://" + Path("files/fakemesh.txt").absolute().as_posix()
+    for element in doc.doc.getElementsByTagName("mesh"):
+        filename = element.getAttribute("filename")
+        assert filename == expected
+
+
+def test_resolve_package_name_no_protocol():
+    doc = XacroDoc.from_file("files/mesh.urdf.xacro", remove_protocols=True)
     expected = Path("files/fakemesh.txt").absolute().as_posix()
     for element in doc.doc.getElementsByTagName("mesh"):
         filename = element.getAttribute("filename")

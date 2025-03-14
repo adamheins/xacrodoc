@@ -1,9 +1,19 @@
 """Test compiling xacro files from third-party repositories."""
+import os
 from pathlib import Path
 
 import pytest
 
-from xacrodoc import XacroDoc
+from xacrodoc import XacroDoc, packages
+
+
+def setup_function():
+    # make sure we are working in the `tests` directory
+    dir = os.path.dirname(os.path.realpath(__file__))
+    os.chdir(dir)
+
+    # ensures packages are reset before each test
+    packages.reset()
 
 
 def test_walkman():

@@ -143,10 +143,36 @@ doc = XacroDoc.from_file("robot.urdf.xacro", subargs={"mass": "2"})
 
 Finally, one feature of URDF (not just xacro files) is that file names (e.g.,
 for meshes) can be specified relative to a package by using
-`package://<pkg>/relative/path/to/mesh` syntax, which depends on ROS and is not
-supported by other non-ROS tools. xacrodoc automatically expands these
-paths out to full absolute paths, but this can be disabled by passing
-`resolve_packages=False` to the `Xacrodoc` constructor.
+```
+package://<pkg>/relative/path/to/mesh
+```
+syntax, which depends on ROS and is not supported by other non-ROS tools.
+xacrodoc automatically expands these paths out to full absolute paths, e.g.,
+```
+file:///abs/path/to/mesh
+```
+but this can be disabled by passing `resolve_packages=False` to the `XacroDoc`
+constructor. Note that the `file://` can be omitted by passing
+`remove_protocols=True` to the `XacroDoc` constructor, which is useful when
+converting to MJCF for example.
+
+### Conversion to MJCF format
+
+Mujoco has basic support for URDFs, but natively uses its own MJCF XML format.
+If you want to use Mujoco, you probably want to convert any xacro file you have
+to MJCF. xacrodoc provides basic functionality to do this, by ensuring Mujoco
+resolves paths properly. Note that `mujoco` must be installed and importable
+for this to work. For example:
+```python
+from xacrodoc import XacroDoc
+
+# remove file protocols and add the Mujoco extension so that Mujoco resolves
+# file paths properly
+doc = XacroDoc.from_file("input.urdf.xacro", remove_protocols=True)
+doc.add_mujoco.extension()
+doc.to_mjcf_file("output.xml")
+```
+MJCF conversion is also available in the command line tool (see below).
 
 ## Command Line Usage
 
@@ -165,9 +191,16 @@ xacrodoc input.urdf.xacro -d ~/my_pkg_dir ~/my_other_pkg_dir
 
 # substitution arguments use := notation, like xacro
 xacrodoc input.urdf.xacro mass:=1
+
+# convert to MJCF (requires Mujoco)
+xacrodoc input.urdf.xacro --mjcf -o output.xml
 ```
 
-It is recommended to install the command line tool using [pipx](https://pipx.pypa.io):
+It is recommended to install the command line tool using [uv](https://docs.astral.sh/uv/):
+```
+uv tool install xacrodoc
+```
+or [pipx](https://pipx.pypa.io):
 ```
 pipx install xacrodoc
 ```
@@ -184,6 +217,7 @@ Then do:
 cd tests
 pytest .
 ```
+To test the Mujoco MJCF features, you'll also need `mujoco` installed.
 
 ## License
 
