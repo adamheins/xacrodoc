@@ -1,26 +1,38 @@
-[tool.black]
-line-length = 80
-
-[tool.poetry]
+[project]
 name = "xacrodoc"
 version = "0.7.0"
-description = "Programmatically compile xacro files."
-authors = ["Adam Heins <mail@adamheins.com>"]
-license = "MIT"
+description = "Compile xacro files to URDF or MJCF from Python or the command line (no ROS required)."
+authors = [
+  {name = "Adam Heins", email = "mail@adamheins.com"}
+]
+license = { text = "MIT" }
 readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+  "pyyaml>=6.0",
+  "rospkg>=1.5.0",
+  "docutils!=0.21",
+]
 
-[tool.poetry.dependencies]
-python = ">=3.8,<3.13"
-pyyaml = ">=6.0"
-rospkg = "^1.5.0"
-docutils = "!=0.21"
+[project.optional-dependencies]
+mujoco = [
+    "mujoco>=3.2.3",
+]
 
-[tool.poetry.group.dev.dependencies]
-pytest = "^7.4.0"
+[dependency-groups]
+dev = [
+  "pytest>=7.4.0",
+]
 
-[tool.poetry.scripts]
+[project.scripts]
 xacrodoc = "xacrodoc.cli:main"
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.black]
+line-length = 80
+
+[tool.pytest.ini_options]
+norecursedirs = "tests/packages"
