@@ -153,9 +153,9 @@ xacrodoc automatically expands these paths out to full absolute paths, e.g.,
 file:///abs/path/to/mesh
 ```
 but this can be disabled by passing `resolve_packages=False` to the `XacroDoc`
-constructor. Note that the `file://` can be omitted by passing
+constructor. Note that the `file://` protocol prefix can be removed by passing
 `remove_protocols=True` to the `XacroDoc` constructor, which is useful when
-converting to MJCF for example.
+converting to MJCF.
 
 ### Conversion to MJCF format
 
@@ -170,7 +170,7 @@ from xacrodoc import XacroDoc
 # remove file protocols and add the Mujoco extension so that Mujoco resolves
 # file paths properly
 doc = XacroDoc.from_file("input.urdf.xacro", remove_protocols=True)
-doc.add_mujoco.extension()
+doc.add_mujoco_extension()
 doc.to_mjcf_file("output.xml")
 ```
 MJCF conversion is also available in the command line tool (see below).
