@@ -2,6 +2,7 @@ from contextlib import contextmanager
 import os
 from pathlib import Path
 import re
+import shutil
 import tempfile
 from xml.dom.minidom import parseString
 
@@ -22,22 +23,7 @@ def _xacro_header(name):
     """.strip()
 
 
-def _resolve_package_protocol(text):
-    """Resolve file names for meshes specified using `package://`"""
-    pkg_names = re.findall(r"package://([\w-]+)", text)
-    for pkg in pkg_names:
-        abspath = Path(packages.get_path(pkg)).absolute().as_posix()
-        text = re.sub(f"package://{pkg}", f"file://{abspath}", text)
-    return text
-
-
-def _compile_xacro_file(
-    text,
-    subargs=None,
-    max_runs=10,
-    resolve_packages=True,
-    remove_protocols=False,
-):
+def _compile_xacro_file(text, subargs=None, max_runs=10):
     """Compile xacro string until a fixed point is reached.
 
     Parameters
@@ -85,18 +71,37 @@ def _compile_xacro_file(
     if run >= max_runs:
         raise ValueError("URDF file did not converge.")
 
-    if resolve_packages or remove_protocols:
-        # TODO could perhaps be more clever than converting from and back to
-        # XML
-        text = doc.toxml()
-        if resolve_packages:
-            text = _resolve_package_protocol(text)
-        if remove_protocols:
-            text = re.sub(f"file://", "", text)
-
-        doc = xacro.parse(text)
-
     return doc
+
+
+def _make_name_unique(name, existing_names):
+    """Make a unique name for a file name.
+
+    The name will have a number suffix incremented until it is unique.
+
+    Parameters
+    ----------
+    name : str
+        The file name to make unique.
+    existing_names : set[str]
+        The set of existing file names; name must be different than these.
+
+    Returns
+    -------
+    : str
+        The new unique name.
+    """
+    if name not in existing_names:
+        return name
+
+    stem, ext = os.path.splitext(name)
+    count = 1
+    while count <= 100:
+        new_name = f"{stem}_{count:03}.{ext}"
+        if new_name not in existing_names:
+            return new_name
+        count += 1
+    raise ValueError(f"Failed to generate unique name for {name}.")
 
 
 class XacroDoc:
@@ -139,9 +144,12 @@ class XacroDoc:
             text=text,
             subargs=subargs,
             max_runs=max_runs,
-            resolve_packages=resolve_packages,
-            remove_protocols=remove_protocols,
         )
+        if resolve_packages or remove_protocols:
+            self.resolve_filenames(
+                resolve_packages=resolve_packages,
+                remove_protocols=remove_protocols,
+            )
 
     @classmethod
     def from_file(cls, path, walk_up=True, **kwargs):
@@ -195,6 +203,80 @@ class XacroDoc:
         s += "</robot>"
         return cls(s, **kwargs)
 
+    def _elements_with_filenames(self):
+        """Get all elements in the XML doc with a filename attribute."""
+        elements = self.doc.getElementsByTagName(
+            "mesh"
+        ) + self.doc.getElementsByTagName("material")
+        return [e for e in elements if e.hasAttribute("filename")]
+
+    def resolve_filenames(self, resolve_packages=True, remove_protocols=False):
+        """Resolve filenames in the document.
+
+        Filenames are attributes of the material and mesh elements.
+
+        Parameters
+        ----------
+        resolve_packages : bool
+            If ``True``, resolve filenames specified relative to packages
+            (using ``package://`` syntax) to their full absolute paths.
+        remove_protocols : bool
+            If ``True``, remove the ``file://`` protocol prefix from filenames.
+        """
+        for e in self._elements_with_filenames():
+            filename = e.getAttribute("filename")
+            if resolve_packages and filename.startswith("package://"):
+                pkg = re.search(r"package://([\w-]+)", filename).group(1)
+                abspath = Path(packages.get_path(pkg)).absolute().as_posix()
+                filename = re.sub(
+                    f"package://{pkg}", f"file://{abspath}", filename
+                )
+            if remove_protocols and filename.startswith("file://"):
+                filename = filename[7:]
+
+            e.setAttribute("filename", filename)
+
+    def localize_assets(self, asset_dir):
+        """Copy all assets to a local directory and change all filenames to corresponding relative paths.
+
+        This is useful when converting to MJCF format. The local assets are
+        given unique names in the case of name collisions.
+
+        Parameters
+        ----------
+        asset_dir : str or Path
+            The path to the local directory where all the assets should be
+            copied to.
+        """
+        basenames = set()
+        path_map = {}
+
+        # make the destination directory
+        asset_dir = Path(asset_dir)
+        asset_dir.mkdir(exist_ok=True)
+
+        for e in self._elements_with_filenames():
+            abspath = e.getAttribute("filename")
+
+            # remove file protocol if it exists
+            if abspath.startswith("file://"):
+                abspath = abspath[7:]
+
+            if abspath in path_map:
+                basename = path_map[abspath]
+            else:
+                basename = _make_name_unique(Path(abspath).name, basenames)
+                basenames.add(basename)
+                path_map[abspath] = basename
+
+            # make the filename relative
+            e.setAttribute("filename", (asset_dir / basename).as_posix())
+
+        # copy all the assets
+        for abspath, name in path_map.items():
+            shutil.copyfile(abspath, asset_dir / name)
+
+    # TODO deprecate this
     def add_mujoco_extension(self):
         """Modify the document to conversion to Mujoco MJCF XML format.
 

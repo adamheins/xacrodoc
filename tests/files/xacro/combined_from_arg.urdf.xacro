@@ -2,5 +2,5 @@
 <robot name="combined" xmlns:xacro="http://www.ros.org/wiki/xacro">
   <xacro:arg name="robotfile" default="default.urdf.xacro" />
   <xacro:include filename="$(arg robotfile)" />
-  <xacro:include filename="$(find xacrodoc)/tests/files/tool.urdf.xacro" />
+  <xacro:include filename="$(find xacrodoc)/tests/files/xacro/tool.urdf.xacro" />
 </robot>

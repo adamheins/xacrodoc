@@ -21,6 +21,12 @@ def main():
         help="Convert the xacro file to an MJCF XML file.",
     )
     parser.add_argument(
+        "-c",
+        "--copy-assets-to",
+        type=str,
+        help="Localize the file by copying all assets to a local directory.",
+    )
+    parser.add_argument(
         "-d",
         "--pkg-dir",
         type=str,
@@ -63,9 +69,12 @@ def main():
         error(f"Error: {e}")
         return 1
 
-    # tell mujoco to keep the full paths to assets
-    if args.mjcf:
-        doc.add_mujoco_extension()
+    # it is recommended to localize assets if converted to MJCF
+    # if one would rather keep absolute paths to assets, then first edit the
+    # xacro file with the <mujoco><compiler strippath="false"/></mujoco>
+    # extension
+    if args.copy_assets_to is not None:
+        doc.localize_assets(args.copy_assets_to)
 
     # output
     if args.output:

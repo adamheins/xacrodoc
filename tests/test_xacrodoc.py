@@ -16,8 +16,8 @@ def setup_function():
 
 
 def test_from_file():
-    doc = XacroDoc.from_file("files/threelink.urdf.xacro")
-    with open("files/threelink.urdf") as f:
+    doc = XacroDoc.from_file("files/xacro/threelink.urdf.xacro")
+    with open("files/urdf/threelink.urdf") as f:
         expected = f.read()
     assert doc.to_urdf_string().strip() == expected.strip()
 
@@ -25,17 +25,20 @@ def test_from_file():
 def test_from_package_file():
     packages.walk_up_from(__file__)
     doc = XacroDoc.from_package_file(
-        "xacrodoc", "tests/files/threelink.urdf.xacro"
+        "xacrodoc", "tests/files/xacro/threelink.urdf.xacro"
     )
-    with open("files/threelink.urdf") as f:
+    with open("files/urdf/threelink.urdf") as f:
         expected = f.read()
     assert doc.to_urdf_string().strip() == expected.strip()
 
 
 def test_from_includes():
-    includes = ["files/threelink.urdf.xacro", "files/tool.urdf.xacro"]
+    includes = [
+        "files/xacro/threelink.urdf.xacro",
+        "files/xacro/tool.urdf.xacro",
+    ]
     doc = XacroDoc.from_includes(includes, name="combined")
-    with open("files/combined.urdf") as f:
+    with open("files/urdf/combined.urdf") as f:
         expected = f.read()
     assert doc.to_urdf_string().strip() == expected.strip()
 
@@ -45,28 +48,28 @@ def test_from_includes_ros_find():
 
     # handle $(find ...) directives
     includes = [
-        "$(find xacrodoc)/tests/files/threelink.urdf.xacro",
-        "$(find xacrodoc)/tests/files/tool.urdf.xacro",
+        "$(find xacrodoc)/tests/files/xacro/threelink.urdf.xacro",
+        "$(find xacrodoc)/tests/files/xacro/tool.urdf.xacro",
     ]
     doc = XacroDoc.from_includes(includes, name="combined")
-    with open("files/combined.urdf") as f:
+    with open("files/urdf/combined.urdf") as f:
         expected = f.read()
     assert doc.to_urdf_string().strip() == expected.strip()
 
 
 def test_subargs():
     subargs = {"mass": "2"}
-    doc = XacroDoc.from_file("files/tool.urdf.xacro", subargs=subargs)
+    doc = XacroDoc.from_file("files/xacro/tool.urdf.xacro", subargs=subargs)
     with doc.temp_urdf_file_path() as path:
         with open(path) as f:
             text = f.read()
-    with open("files/tool2.urdf") as f:
+    with open("files/urdf/tool2.urdf") as f:
         expected = f.read()
     assert text.strip() == expected.strip()
 
 
 def test_temp_urdf_file():
-    doc = XacroDoc.from_file("files/threelink.urdf.xacro")
+    doc = XacroDoc.from_file("files/xacro/threelink.urdf.xacro")
 
     # write to a temporary file and read back
     path = doc.to_temp_urdf_file()
@@ -77,14 +80,14 @@ def test_temp_urdf_file():
     os.remove(path)
 
     # compare to expected URDF
-    with open("files/threelink.urdf") as f:
+    with open("files/urdf/threelink.urdf") as f:
         expected = f.read()
 
     assert text.strip() == expected.strip()
 
 
 def test_temp_urdf_file_path():
-    doc = XacroDoc.from_file("files/threelink.urdf.xacro")
+    doc = XacroDoc.from_file("files/xacro/threelink.urdf.xacro")
 
     # write to a temporary file and read back
     with doc.temp_urdf_file_path() as path:
@@ -92,53 +95,55 @@ def test_temp_urdf_file_path():
             text = f.read()
 
     # compare to expected URDF
-    with open("files/threelink.urdf") as f:
+    with open("files/urdf/threelink.urdf") as f:
         expected = f.read()
 
     assert text.strip() == expected.strip()
 
 
-def test_resolve_packages():
-    from xacrodoc.xacrodoc import _resolve_package_protocol
+def _xacro_str_with_include(include):
+    return f"""<?xml version="1.0" encoding="utf-8"?>
+    <robot name="combined" xmlns:xacro="http://www.ros.org/wiki/xacro">
+      <xacro:include filename="{include}" />
+    </robot>"""
 
+
+def test_resolve_packages():
     # spoof package paths so these all point to the same package (this one)
     # want to test hyphens and underscores in the package names
     packages.update_package_cache(
         {
             "xacrodoc": "..",
-            "example-robot-data": "..",
-            "robot_description": "..",
+            "fake-package": "..",
+            "another_fake_package": "..",
         }
     )
 
-    # some text with package protocols
-    text = """
-package://xacrodoc/tests/files/threelink.urdf.xacro
-package://example-robot-data/tests/files/threelink.urdf.xacro
-package://robot_description/tests/files/threelink.urdf.xacro
-"""
+    with open("files/xacro/mesh.urdf.xacro") as f:
+        text = f.read()
 
-    # all package protocols should resolve to the same absolute path
-    absolute_path = Path("files/threelink.urdf.xacro").absolute().as_posix()
-    expected = f"""
-file://{absolute_path}
-file://{absolute_path}
-file://{absolute_path}
-"""
-    resolved = _resolve_package_protocol(text)
-    assert resolved.strip() == expected.strip()
-
-
-def test_resolve_package_name():
-    doc = XacroDoc.from_file("files/mesh.urdf.xacro")
+    paths = [
+        "package://xacrodoc/tests/files/fakemesh.txt",
+        "package://fake-package/tests/files/fakemesh.txt",
+        "package://another_fake_package/tests/files/fakemesh.txt",
+    ]
     expected = "file://" + Path("files/fakemesh.txt").absolute().as_posix()
-    for element in doc.doc.getElementsByTagName("mesh"):
-        filename = element.getAttribute("filename")
-        assert filename == expected
+    for path in paths:
+        doc = XacroDoc.from_file(
+            "files/xacro/mesh.urdf.xacro", resolve_packages=False
+        )
+        for element in doc.doc.getElementsByTagName("mesh"):
+            element.setAttribute("filename", path)
+        doc.resolve_filenames()
+        for element in doc.doc.getElementsByTagName("mesh"):
+            filename = element.getAttribute("filename")
+            assert filename == expected
 
 
 def test_resolve_package_name_no_protocol():
-    doc = XacroDoc.from_file("files/mesh.urdf.xacro", remove_protocols=True)
+    doc = XacroDoc.from_file(
+        "files/xacro/mesh.urdf.xacro", remove_protocols=True
+    )
     expected = Path("files/fakemesh.txt").absolute().as_posix()
     for element in doc.doc.getElementsByTagName("mesh"):
         filename = element.getAttribute("filename")
@@ -149,9 +154,9 @@ def test_include_from_arg():
     # just see if this can compile
     # we want to ensure that $(find) can be nested in an $(arg)
     doc = XacroDoc.from_file(
-        "files/combined_from_arg.urdf.xacro",
+        "files/xacro/combined_from_arg.urdf.xacro",
         subargs={
-            "robotfile": "$(find xacrodoc)/tests/files/threelink.urdf.xacro"
+            "robotfile": "$(find xacrodoc)/tests/files/xacro/threelink.urdf.xacro"
         },
     )
 
@@ -160,7 +165,7 @@ def test_package_cache():
     # manually specify a (non-resolved) path to xacrodoc and disable walking up
     # the directory tree
     packages.update_package_cache({"xacrodoc": "../.."})
-    doc = XacroDoc.from_file("files/threelink.urdf.xacro", walk_up=False)
-    with open("files/threelink.urdf") as f:
+    doc = XacroDoc.from_file("files/xacro/threelink.urdf.xacro", walk_up=False)
+    with open("files/urdf/threelink.urdf") as f:
         expected = f.read()
     assert doc.to_urdf_string().strip() == expected.strip()

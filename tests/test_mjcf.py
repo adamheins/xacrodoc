@@ -23,7 +23,7 @@ def setup_function():
 
 def test_mjcf():
     doc = XacroDoc.from_file(
-        "files/threelink.urdf.xacro", remove_protocols=True
+        "files/xacro/threelink.urdf.xacro", remove_protocols=True
     )
     doc.add_mujoco_extension()
 
@@ -35,7 +35,7 @@ def test_mjcf():
 def test_mjcf_existing_mujoco_ext():
     # check that this works when a mujoco extension is already present
     doc = XacroDoc.from_file(
-        "files/threelink_mujoco.urdf.xacro", remove_protocols=True
+        "files/xacro/threelink_mujoco.urdf.xacro", remove_protocols=True
     )
     doc.add_mujoco_extension()
 
