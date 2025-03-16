@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+import tempfile
 
 import pytest
 
@@ -123,11 +124,13 @@ def test_resolve_packages():
         text = f.read()
 
     paths = [
-        "package://xacrodoc/tests/files/fakemesh.txt",
-        "package://fake-package/tests/files/fakemesh.txt",
-        "package://another_fake_package/tests/files/fakemesh.txt",
+        "package://xacrodoc/tests/files/assets/fakemesh.txt",
+        "package://fake-package/tests/files/assets/fakemesh.txt",
+        "package://another_fake_package/tests/files/assets/fakemesh.txt",
     ]
-    expected = "file://" + Path("files/fakemesh.txt").absolute().as_posix()
+    expected = (
+        "file://" + Path("files/assets/fakemesh.txt").absolute().as_posix()
+    )
     for path in paths:
         doc = XacroDoc.from_file(
             "files/xacro/mesh.urdf.xacro", resolve_packages=False
@@ -144,7 +147,7 @@ def test_resolve_package_name_no_protocol():
     doc = XacroDoc.from_file(
         "files/xacro/mesh.urdf.xacro", remove_protocols=True
     )
-    expected = Path("files/fakemesh.txt").absolute().as_posix()
+    expected = Path("files/assets/fakemesh.txt").absolute().as_posix()
     for element in doc.doc.getElementsByTagName("mesh"):
         filename = element.getAttribute("filename")
         assert filename == expected
@@ -169,3 +172,13 @@ def test_package_cache():
     with open("files/urdf/threelink.urdf") as f:
         expected = f.read()
     assert doc.to_urdf_string().strip() == expected.strip()
+
+
+def test_localize_assets():
+    doc = XacroDoc.from_file("files/xacro/mesh2.urdf.xacro")
+    with tempfile.TemporaryDirectory() as asset_dir:
+        doc.localize_assets(asset_dir)
+        files = os.listdir(asset_dir)
+        assert len(files) == 2
+        assert "fakemesh.txt" in files
+        assert "fakemesh_001.txt" in files

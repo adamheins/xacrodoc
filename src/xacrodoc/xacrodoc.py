@@ -97,7 +97,7 @@ def _make_name_unique(name, existing_names):
     stem, ext = os.path.splitext(name)
     count = 1
     while count <= 100:
-        new_name = f"{stem}_{count:03}.{ext}"
+        new_name = f"{stem}_{count:03}{ext}"
         if new_name not in existing_names:
             return new_name
         count += 1
