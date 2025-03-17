@@ -4,17 +4,18 @@ from pathlib import Path
 import re
 import shutil
 import tempfile
-from xml.dom.minidom import parseString
 
-import rospkg
+from . import packages
+from .xacro import xacro
+from .xacro.xacro import substitution_args
 
-from . import xacro, packages
+
+# monkey patch to replace xacro's package finding infrastructure
+substitution_args._eval_find = lambda pkg: packages.get_path(pkg)
 
 
 def _xacro_include(path):
-    return f"""
-    <xacro:include filename="{path}" />
-    """
+    return f'<xacro:include filename="{path}"/>'
 
 
 def _xacro_header(name):
