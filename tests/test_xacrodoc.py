@@ -102,13 +102,6 @@ def test_temp_urdf_file_path():
     assert text.strip() == expected.strip()
 
 
-def _xacro_str_with_include(include):
-    return f"""<?xml version="1.0" encoding="utf-8"?>
-    <robot name="combined" xmlns:xacro="http://www.ros.org/wiki/xacro">
-      <xacro:include filename="{include}" />
-    </robot>"""
-
-
 def test_resolve_packages():
     # spoof package paths so these all point to the same package (this one)
     # want to test hyphens and underscores in the package names
@@ -120,34 +113,8 @@ def test_resolve_packages():
         }
     )
 
-    with open("files/xacro/mesh.urdf.xacro") as f:
-        text = f.read()
-
-    paths = [
-        "package://xacrodoc/tests/files/assets/fakemesh.txt",
-        "package://fake-package/tests/files/assets/fakemesh.txt",
-        "package://another_fake_package/tests/files/assets/fakemesh.txt",
-    ]
-    expected = (
-        "file://" + Path("files/assets/fakemesh.txt").absolute().as_posix()
-    )
-    for path in paths:
-        doc = XacroDoc.from_file(
-            "files/xacro/mesh.urdf.xacro", resolve_packages=False
-        )
-        for element in doc.doc.getElementsByTagName("mesh"):
-            element.setAttribute("filename", path)
-        doc.resolve_filenames()
-        for element in doc.doc.getElementsByTagName("mesh"):
-            filename = element.getAttribute("filename")
-            assert filename == expected
-
-
-def test_resolve_package_name_no_protocol():
-    doc = XacroDoc.from_file(
-        "files/xacro/mesh.urdf.xacro", remove_protocols=True
-    )
-    expected = Path("files/assets/fakemesh.txt").absolute().as_posix()
+    expected = "file://" + Path("files/assets/base.stl").absolute().as_posix()
+    doc = XacroDoc.from_file("files/xacro/mesh_different_packages.urdf.xacro")
     for element in doc.doc.getElementsByTagName("mesh"):
         filename = element.getAttribute("filename")
         assert filename == expected
@@ -180,5 +147,5 @@ def test_localize_assets():
         doc.localize_assets(asset_dir)
         files = os.listdir(asset_dir)
         assert len(files) == 2
-        assert "fakemesh.txt" in files
-        assert "fakemesh_001.txt" in files
+        assert "base.stl" in files
+        assert "base_001.stl" in files

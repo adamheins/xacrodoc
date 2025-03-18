@@ -1,18 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <robot name="mesh" xmlns:xacro="http://wiki.ros.org/xacro">
   <link name="mesh">
-    <visual>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <geometry>
-        <mesh filename="package://xacrodoc/tests/files/assets/fakemesh.txt"/>
-      </geometry>
-      <material name="black"/>
-    </visual>
-
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <cylinder length="0.15" radius="0.02"/>
+        <mesh filename="package://xacrodoc/tests/files/assets/base.stl"/>
       </geometry>
     </collision>
 

@@ -4,6 +4,7 @@ from pathlib import Path
 import re
 import shutil
 import tempfile
+from xml.dom.minidom import parseString
 
 from . import packages
 from .xacro import xacro
@@ -35,12 +36,6 @@ def _compile_xacro_file(text, subargs=None, max_runs=10):
         Optional dictionary of substitution arguments to pass into xacro.
     max_runs : int
         Maximum number of compilation runs.
-    resolve_packages : bool
-        If ``True``, resolve package protocol URIs in the compiled URDF.
-        Otherwise, they are left unchanged.
-    remove_protocols : bool
-        If ``True``, remove file:// protocols in the compiled URDF.
-        Otherwise, they are left unchanged.
 
     Raises
     ------
@@ -73,6 +68,61 @@ def _compile_xacro_file(text, subargs=None, max_runs=10):
         raise ValueError("URDF file did not converge.")
 
     return doc
+
+
+def _urdf_elements_with_filenames(doc):
+    """Get all elements in the XML doc with a filename attribute."""
+    elements = doc.getElementsByTagName("mesh") + doc.getElementsByTagName(
+        "material"
+    )
+    return [e for e in elements if e.hasAttribute("filename")]
+
+
+def _resolve_packages(doc):
+    """Convert all filenames specified with package:// to a full absolute path."""
+    for e in _urdf_elements_with_filenames(doc):
+        filename = e.getAttribute("filename")
+        if filename.startswith("package://"):
+            pkg = re.search(r"package://([\w-]+)", filename).group(1)
+            abspath = Path(packages.get_path(pkg)).absolute().as_posix()
+            filename = re.sub(f"package://{pkg}", f"file://{abspath}", filename)
+        e.setAttribute("filename", filename)
+
+
+def _remove_file_protocols(doc):
+    for e in _urdf_elements_with_filenames(doc):
+        filename = e.getAttribute("filename")
+        if filename.startswith("file://"):
+            filename = filename[7:]
+        e.setAttribute("filename", filename)
+
+
+def _set_mjcf_compile_options(doc, **kwargs):
+    """Add or set compiler options in the mujoco extension."""
+    mujoco_nodes = doc.getElementsByTagName("mujoco")
+    if len(mujoco_nodes) > 1:
+        raise ValueError("Multiple <mujoco> elements found.")
+    if len(mujoco_nodes) == 0:
+        mujoco_node = doc.createElement("mujoco")
+        doc.documentElement.appendChild(mujoco_node)
+    else:
+        mujoco_node = mujoco_nodes[0]
+
+    compiler_nodes = mujoco_node.getElementsByTagName("compiler")
+    if len(compiler_nodes) > 1:
+        raise ValueError("Multiple <compiler> elements found.")
+    if len(compiler_nodes) == 0:
+        compiler_node = doc.createElement("compiler")
+        mujoco_node.appendChild(compiler_node)
+    else:
+        compiler_node = compiler_nodes[0]
+
+    for k, v in kwargs.items():
+        if type(v) != str:
+            raise TypeError(
+                f"MJCF compile option values must be strings, but got {v} which is of type {type(v)}."
+            )
+        compiler_node.setAttribute(str(k), v)
 
 
 def _make_name_unique(name, existing_names):
@@ -123,9 +173,6 @@ class XacroDoc:
     resolve_packages : bool
         If ``True``, resolve package protocol URIs in the compiled URDF.
         Otherwise, they are left unchanged.
-    remove_protocols : bool
-        If ``True``, remove file:// protocols in the compiled URDF.
-        Otherwise, they are left unchanged.
 
     Attributes
     ----------
@@ -139,18 +186,15 @@ class XacroDoc:
         subargs=None,
         max_runs=10,
         resolve_packages=True,
-        remove_protocols=False,
     ):
+        # TODO rename to dom?
         self.doc = _compile_xacro_file(
             text=text,
             subargs=subargs,
             max_runs=max_runs,
         )
-        if resolve_packages or remove_protocols:
-            self.resolve_filenames(
-                resolve_packages=resolve_packages,
-                remove_protocols=remove_protocols,
-            )
+        if resolve_packages:
+            _resolve_packages(self.doc)
 
     @classmethod
     def from_file(cls, path, walk_up=True, **kwargs):
@@ -204,41 +248,9 @@ class XacroDoc:
         s += "</robot>"
         return cls(s, **kwargs)
 
-    def _elements_with_filenames(self):
-        """Get all elements in the XML doc with a filename attribute."""
-        elements = self.doc.getElementsByTagName(
-            "mesh"
-        ) + self.doc.getElementsByTagName("material")
-        return [e for e in elements if e.hasAttribute("filename")]
-
-    def resolve_filenames(self, resolve_packages=True, remove_protocols=False):
-        """Resolve filenames in the document.
-
-        Filenames are attributes of the material and mesh elements.
-
-        Parameters
-        ----------
-        resolve_packages : bool
-            If ``True``, resolve filenames specified relative to packages
-            (using ``package://`` syntax) to their full absolute paths.
-        remove_protocols : bool
-            If ``True``, remove the ``file://`` protocol prefix from filenames.
-        """
-        for e in self._elements_with_filenames():
-            filename = e.getAttribute("filename")
-            if resolve_packages and filename.startswith("package://"):
-                pkg = re.search(r"package://([\w-]+)", filename).group(1)
-                abspath = Path(packages.get_path(pkg)).absolute().as_posix()
-                filename = re.sub(
-                    f"package://{pkg}", f"file://{abspath}", filename
-                )
-            if remove_protocols and filename.startswith("file://"):
-                filename = filename[7:]
-
-            e.setAttribute("filename", filename)
-
     def localize_assets(self, asset_dir):
-        """Copy all assets to a local directory and change all filenames to corresponding relative paths.
+        """Copy all assets to a local directory and update all filenames in the
+        document accordingly.
 
         This is useful when converting to MJCF format. The local assets are
         given unique names in the case of name collisions.
@@ -256,7 +268,7 @@ class XacroDoc:
         asset_dir = Path(asset_dir)
         asset_dir.mkdir(exist_ok=True)
 
-        for e in self._elements_with_filenames():
+        for e in _urdf_elements_with_filenames(self.doc):
             abspath = e.getAttribute("filename")
 
             # remove file protocol if it exists
@@ -270,57 +282,73 @@ class XacroDoc:
                 basenames.add(basename)
                 path_map[abspath] = basename
 
-            # make the filename relative
-            e.setAttribute("filename", (asset_dir / basename).as_posix())
+            # point to the new path
+            new_path = (asset_dir / basename).absolute().as_posix()
+            e.setAttribute("filename", f"file://{new_path}")
 
         # copy all the assets
         for abspath, name in path_map.items():
             shutil.copyfile(abspath, asset_dir / name)
 
-    # TODO deprecate this
-    def add_mujoco_extension(self):
-        """Modify the document to conversion to Mujoco MJCF XML format.
+    def _to_mjcf_spec(self, path, **kwargs):
+        import mujoco
 
-        Currently this sets the strippath compiler attribute to false, so that
-        full paths can be used for meshes.
-        """
-        mujoco_nodes = self.doc.getElementsByTagName("mujoco")
-        if len(mujoco_nodes) > 1:
-            raise ValueError("Multiple <mujoco> elements found.")
-        if len(mujoco_nodes) == 0:
-            mujoco_node = self.doc.createElement("mujoco")
-            self.doc.documentElement.appendChild(mujoco_node)
-        else:
-            mujoco_node = mujoco_nodes[0]
+        # make a copy to avoid changing the original
+        doc = parseString(self.doc.toxml())
 
-        compiler_nodes = mujoco_node.getElementsByTagName("compiler")
-        if len(compiler_nodes) > 1:
-            raise ValueError("Multiple <compiler> elements found.")
-        if len(compiler_nodes) == 0:
-            compiler_node = self.doc.createElement("compiler")
-            mujoco_node.appendChild(compiler_node)
-        else:
-            compiler_node = compiler_nodes[0]
+        # strip off file:// protocols, which mujoco does not support
+        _remove_file_protocols(doc)
 
-        compiler_node.setAttribute("strippath", "false")
+        # set compile options
+        _set_mjcf_compile_options(doc, **kwargs)
 
-    def to_mjcf_file(self, path):
+        # we need to create a temporary URDF file (rather than just work with
+        # the XML string) because mujoco will use paths to assets relative to
+        # the URDF file when strippath="false"
+        path = Path(path)
+        with tempfile.NamedTemporaryFile(
+            suffix=".urdf", dir=path.parent, mode="w", delete_on_close=False
+        ) as f:
+            # write the URDF
+            f.write(doc.toxml())
+            f.close()
+
+            # convert the URDF to MJCF
+            urdf_path = (path.parent / f.name).as_posix()
+            spec = mujoco.MjSpec.from_file(urdf_path)
+            spec.compile()
+        return spec
+
+    def to_mjcf_file(self, path, **kwargs):
         """Convert and write to a Mujoco MJCF XML file.
 
         This requires mujoco module to be installed and available for import.
+
+        All **kwargs are used as Mujoco compiler options; see
+        https://mujoco.readthedocs.io/en/stable/modeling.html#curdf
 
         Parameters
         ----------
         path : str or Path
             The path to the MJCF XML file to be written.
         """
-        import mujoco
+        path = Path(path)
+        self._to_mjcf_spec(path, **kwargs).to_file(path.as_posix())
 
-        path = Path(path).as_posix()
+    def to_mjcf_string(self, **kwargs):
+        """Convert to a string in Mujoco MJCF XML format.
 
-        urdf_str = self.to_urdf_string()
-        model = mujoco.MjModel.from_xml_string(urdf_str)
-        mujoco.mj_saveLastXML(path, model)
+        This requires mujoco module to be installed and available for import.
+
+        All **kwargs are used as Mujoco compiler options; see
+        https://mujoco.readthedocs.io/en/stable/modeling.html#curdf
+
+        Returns
+        ----------
+        : str
+            The string of XML.
+        """
+        return self._to_mjcf_spec(".", **kwargs).to_xml()
 
     def to_urdf_file(self, path, compare_existing=True, verbose=False):
         """Write the URDF to a file.

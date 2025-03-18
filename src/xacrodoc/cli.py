@@ -58,9 +58,7 @@ def main():
     # if converting to mujoco format, then we need to remove the file://
     # protocol from file paths
     try:
-        doc = XacroDoc.from_file(
-            args.xacro_file, subargs=subargs, remove_protocols=args.mjcf
-        )
+        doc = XacroDoc.from_file(args.xacro_file, subargs=subargs)
     except PackageNotFoundError as e:
         error(f"Error: package not found: {e}")
         print("You can specify additional package directories with --pkg-dir")
@@ -70,20 +68,31 @@ def main():
         return 1
 
     # it is recommended to localize assets if converted to MJCF
-    # if one would rather keep absolute paths to assets, then first edit the
-    # xacro file with the <mujoco><compiler strippath="false"/></mujoco>
-    # extension
+    mjcf_compiler_opts = {}
     if args.copy_assets_to is not None:
         doc.localize_assets(args.copy_assets_to)
+        print(f"Copied assets to {args.copy_assets_to}")
+        if args.output is not None:
+            parent = Path(args.output).parent
+            meshdir = os.path.relpath(args.copy_assets_to, parent)
+        else:
+            meshdir = args.copy_assets_to
+        mjcf_compiler_opts["strippath"] = "true"
+        mjcf_compiler_opts["meshdir"] = meshdir
+    else:
+        mjcf_compiler_opts["strippath"] = "false"
 
-    # output
     if args.output:
         if args.mjcf:
-            doc.to_mjcf_file(args.output)
+            doc.to_mjcf_file(args.output, **mjcf_compiler_opts)
         else:
             doc.to_urdf_file(args.output, compare_existing=False)
     else:
-        print(doc.to_urdf_string())
+        if args.mjcf:
+            s = doc.to_mjcf_string(**mjcf_compiler_opts)
+        else:
+            s = doc.to_urdf_string()
+        print(s)
     return 0
 
 

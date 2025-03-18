@@ -4,10 +4,10 @@ xacrodoc is a tool for programmatically compiling
 [xacro](https://github.com/ros/xacro) files to plain URDF files or Mujoco MJCF
 files. It is fully functional whether ROS is installed on the system or not.
 
-Why?
+## Why?
 
 * Compile xacro files without a ROS installation.
-* Convert xacro files to Mujoco MJCF files.
+* Convert xacro or plain URDF files to Mujoco MJCF files.
 * Avoid the clutter of redundant compiled raw URDFs; only keep the xacro
   source files.
 * Programmatically compose multiple xacro files and apply substitution
@@ -17,6 +17,8 @@ Why?
   [Pinocchio](https://github.com/stack-of-tasks/pinocchio)) accept a URDF
   string to build a model, but others (like [PyBullet](https://pybullet.org))
   only load URDFs directly from file paths.
+
+## Documentation
 
 See the documentation [here](https://xacrodoc.readthedocs.io/en/latest/).
 
@@ -161,18 +163,29 @@ converting to MJCF.
 
 Mujoco has basic support for URDFs, but natively uses its own MJCF XML format.
 If you want to use Mujoco, you probably want to convert any xacro file you have
-to MJCF. xacrodoc provides basic functionality to do this, by ensuring Mujoco
-resolves paths properly. Note that `mujoco` must be installed and importable
-for this to work. For example:
+to MJCF. Mujoco automatically converts absolute file paths to assets like mesh
+files in the URDF to relative paths. xacrodoc makes it easy to disable this or
+automatically copy the assets to a local relative directory. Note that `mujoco`
+must be installed and importable for this to work. For example:
 ```python
 from xacrodoc import XacroDoc
 
-# remove file protocols and add the Mujoco extension so that Mujoco resolves
-# file paths properly
-doc = XacroDoc.from_file("input.urdf.xacro", remove_protocols=True)
-doc.add_mujoco_extension()
-doc.to_mjcf_file("output.xml")
+doc = XacroDoc.from_file("input.urdf.xacro")
+
+# keep absolute paths to assets
+doc.to_mjcf_file("output.xml", strippath="false")
+
+# copy all the referenced assets to the directory `assets` before conversion
+doc.localize_assets("assets")
+doc.to_mjcf_file("output.xml", strippath="true", meshdir="assets")
+
+# if desired, one can also just produce an MJCF string:
+xml = doc.to_mjcf_string()
 ```
+Both `to_mjcf_file` and `to_mjcf_string` accept keyword arguments corresponding
+to the Mujoco URDF compiler
+[extension](https://mujoco.readthedocs.io/en/stable/modeling.html#curdf).
+
 MJCF conversion is also available in the command line tool (see below).
 
 ## Command Line Usage

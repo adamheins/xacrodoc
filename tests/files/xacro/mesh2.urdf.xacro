@@ -4,7 +4,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://xacrodoc/tests/files/assets/one/fakemesh.txt"/>
+        <mesh filename="package://xacrodoc/tests/files/assets/one/base.stl"/>
       </geometry>
       <material name="black"/>
     </visual>
@@ -12,7 +12,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://xacrodoc/tests/files/assets/two/fakemesh.txt"/>
+        <mesh filename="package://xacrodoc/tests/files/assets/two/base.stl"/>
       </geometry>
     </collision>
 

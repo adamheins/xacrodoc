@@ -22,23 +22,26 @@ def setup_function():
 
 
 def test_mjcf():
-    doc = XacroDoc.from_file(
-        "files/xacro/threelink.urdf.xacro", remove_protocols=True
-    )
-    doc.add_mujoco_extension()
-
+    doc = XacroDoc.from_file("files/xacro/mesh.urdf.xacro")
     with tempfile.TemporaryDirectory() as tmp:
-        path = Path(tmp) / "threelink.xml"
-        doc.to_mjcf_file(path)
+        path = Path(tmp) / "mesh.xml"
+
+        # try with and without stripping the absolute path
+        doc.to_mjcf_file(path, strippath="false")
+
+        # this fails because we haven't copied the file over despite stripping
+        # the path
+        with pytest.raises(ValueError):
+            doc.to_mjcf_file(path, strippath="true")
+
+        asset_dir = Path(tmp) / "assets"
+        doc.localize_assets(asset_dir)
+        doc.to_mjcf_file(path, meshdir="assets", strippath="true")
 
 
 def test_mjcf_existing_mujoco_ext():
     # check that this works when a mujoco extension is already present
-    doc = XacroDoc.from_file(
-        "files/xacro/threelink_mujoco.urdf.xacro", remove_protocols=True
-    )
-    doc.add_mujoco_extension()
-
+    doc = XacroDoc.from_file("files/xacro/threelink_mujoco.urdf.xacro")
     with tempfile.TemporaryDirectory() as tmp:
         path = Path(tmp) / "threelink.xml"
         doc.to_mjcf_file(path)
