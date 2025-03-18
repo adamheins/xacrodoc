@@ -200,8 +200,10 @@ xacrodoc input.urdf.xacro
 # compile and output to provided output file
 xacrodoc input.urdf.xacro -o output.urdf
 
-# provide directories in which to look for packages referenced in input.urdf.xacro
-xacrodoc input.urdf.xacro -d ~/my_pkg_dir ~/my_other_pkg_dir
+# provide directories in which to look for packages referenced in
+# input.urdf.xacro (-d flag is needed before each one to disambiguate from
+# substitution arguments)
+xacrodoc input.urdf.xacro -d ~/my_pkg_dir -d ~/my_other_pkg_dir
 
 # substitution arguments use := notation, like xacro
 xacrodoc input.urdf.xacro mass:=1

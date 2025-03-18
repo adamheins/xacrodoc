@@ -32,7 +32,7 @@ def main():
         "--pkg-dir",
         type=str,
         action="extend",
-        nargs="*",
+        nargs=1,
         help="Directories in which to search for packages.",
     )
     parser.add_argument(
