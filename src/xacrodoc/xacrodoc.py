@@ -71,7 +71,18 @@ def _compile_xacro_file(text, subargs=None, max_runs=10):
 
 
 def _urdf_elements_with_filenames(doc):
-    """Get all elements in the XML doc with a filename attribute."""
+    """Get all elements in the URDF document with a filename attribute.
+
+    Parameters
+    ----------
+    doc : xml.dom.minidom.Document
+        The XML document.
+
+    Returns
+    -------
+    : list
+        List of elements which have a filename attribute.
+    """
     elements = doc.getElementsByTagName("mesh") + doc.getElementsByTagName(
         "material"
     )
@@ -79,7 +90,13 @@ def _urdf_elements_with_filenames(doc):
 
 
 def _resolve_packages(doc):
-    """Convert all filenames specified with package:// to a full absolute path."""
+    """Convert all filenames specified with package:// to a full absolute path.
+
+    Parameters
+    ----------
+    doc : xml.dom.minidom.Document
+        The XML document, which is modified in place.
+    """
     for e in _urdf_elements_with_filenames(doc):
         filename = e.getAttribute("filename")
         if filename.startswith("package://"):
@@ -90,6 +107,13 @@ def _resolve_packages(doc):
 
 
 def _remove_file_protocols(doc):
+    """Remove file:// prefix from all asset filenames.
+
+    Parameters
+    ----------
+    doc : xml.dom.minidom.Document
+        The XML document, which is modified in place.
+    """
     for e in _urdf_elements_with_filenames(doc):
         filename = e.getAttribute("filename")
         if filename.startswith("file://"):
@@ -98,7 +122,16 @@ def _remove_file_protocols(doc):
 
 
 def _set_mjcf_compile_options(doc, **kwargs):
-    """Add or set compiler options in the mujoco extension."""
+    """Add or set compiler options in the mujoco extension.
+
+    All ``kwargs`` are used as Mujoco compiler options; see
+    https://mujoco.readthedocs.io/en/stable/modeling.html#curdf
+
+    Parameters
+    ----------
+    doc : xml.dom.minidom.Document
+        The XML document, which is modified in place.
+    """
     mujoco_nodes = doc.getElementsByTagName("mujoco")
     if len(mujoco_nodes) > 1:
         raise ValueError("Multiple <mujoco> elements found.")
