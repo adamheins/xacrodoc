@@ -4,6 +4,7 @@ import sys
 from .xacro.xacro.color import error
 from .xacro.xacro import XacroException
 from .packages import look_in, PackageNotFoundError
+from .version import __version__
 from .xacrodoc import XacroDoc
 
 
@@ -33,6 +34,12 @@ def main():
         action="extend",
         nargs="*",
         help="Directories in which to search for packages.",
+    )
+    parser.add_argument(
+        "-V",
+        "--version",
+        action="version",
+        version=__version__
     )
     args, remainder = parser.parse_known_args()
 

@@ -23,6 +23,10 @@ mujoco = [
 dev = [
   "pytest>=7.4.0",
 ]
+docs = [
+  "sphinx>=7.1.2",
+  "sphinx-rtd-theme>=3.0.2",
+]
 
 [project.scripts]
 xacrodoc = "xacrodoc.cli:main"
@@ -30,6 +34,9 @@ xacrodoc = "xacrodoc.cli:main"
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.uv]
+default-groups = ["dev", "docs"]
 
 [tool.black]
 line-length = 80

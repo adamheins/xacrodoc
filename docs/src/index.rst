@@ -1,7 +1,8 @@
 xacrodoc
 ========
 
-Programmatically compile xacro files (without ROS).
+Compile xacro files to URDF or MJCF from Python or the command line (no ROS
+required).
 
 Install with pip: ``pip install xacrodoc``
 

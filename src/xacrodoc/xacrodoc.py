@@ -322,9 +322,10 @@ class XacroDoc:
     def to_mjcf_file(self, path, **kwargs):
         """Convert and write to a Mujoco MJCF XML file.
 
-        This requires mujoco module to be installed and available for import.
+        This requires the ``mujoco`` module to be installed and available for
+        import.
 
-        All **kwargs are used as Mujoco compiler options; see
+        All ``kwargs`` are used as Mujoco compiler options; see
         https://mujoco.readthedocs.io/en/stable/modeling.html#curdf
 
         Parameters
@@ -338,9 +339,10 @@ class XacroDoc:
     def to_mjcf_string(self, **kwargs):
         """Convert to a string in Mujoco MJCF XML format.
 
-        This requires mujoco module to be installed and available for import.
+        This requires the ``mujoco`` module to be installed and available for
+        import.
 
-        All **kwargs are used as Mujoco compiler options; see
+        All ``kwargs`` are used as Mujoco compiler options; see
         https://mujoco.readthedocs.io/en/stable/modeling.html#curdf
 
         Returns

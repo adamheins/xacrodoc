@@ -3,7 +3,7 @@
 XacroDoc
 --------
 
-The main interface for xacrodoc: use to compile xacro files to URDF.
+The main interface for xacrodoc: use to compile xacro files to URDF or MJCF.
 
 .. automodule:: xacrodoc.xacrodoc
     :members:
