@@ -1,13 +1,13 @@
 # xacrodoc
 
-xacrodoc is a tool for programmatically compiling
-[xacro](https://github.com/ros/xacro) files to plain URDF files or Mujoco MJCF
-files. It is fully functional whether ROS is installed on the system or not.
+xacrodoc is a tool for compiling [xacro](https://github.com/ros/xacro) files to
+plain URDF files or Mujoco MJCF files from within Python code or via the
+command line. It is fully functional whether ROS is installed on the system or
+not.
 
 ## Why?
 
-* Compile xacro files without a ROS installation.
-* Convert xacro or plain URDF files to Mujoco MJCF files.
+* Compile xacro files to URDF or Mujoco MJCF files without a ROS installation.
 * Avoid the clutter of redundant compiled raw URDFs; only keep the xacro
   source files.
 * Programmatically compose multiple xacro files and apply substitution
@@ -28,16 +28,25 @@ xacrodoc requires at least Python 3.8. Note that ROS *does not* need to be
 installed on the system, but xacrodoc will also use its infrastructure to look
 for packages if it is available.
 
-From pip:
+The library can be installed from pip:
 ```sh
 pip install xacrodoc
 ```
-
-From source:
+or from source:
 ```sh
 git clone --recurse-submodules https://github.com/adamheins/xacrodoc
 cd xacrodoc
 pip install .
+```
+
+It is recommended to install the command line tool into an isolated environment
+using [uv](https://docs.astral.sh/uv/):
+```
+uv tool install xacrodoc
+```
+or [pipx](https://pipx.pypa.io):
+```
+pipx install xacrodoc
 ```
 
 ## Python Usage
@@ -47,6 +56,7 @@ pip install .
 A basic use-case of compiling a URDF from a xacro file:
 
 ```python
+import os
 from xacrodoc import XacroDoc
 
 doc = XacroDoc.from_file("robot.urdf.xacro")
@@ -72,7 +82,9 @@ with doc.temp_urdf_file_path() as path:
 # right away
 path = doc.to_temp_urdf_file()
 # ...do stuff with path...
-# ...manually delete the temp file
+
+# manually delete the temp file
+os.unlink(path)
 ```
 
 ### Finding ROS packages
@@ -164,7 +176,7 @@ converting to MJCF.
 Mujoco has basic support for URDFs, but natively uses its own MJCF XML format.
 If you want to use Mujoco, you probably want to convert any xacro file you have
 to MJCF. Mujoco automatically converts absolute file paths to assets like mesh
-files in the URDF to relative paths. xacrodoc makes it easy to disable this or
+files to relative paths. xacrodoc makes it easy to disable this behaviour or
 automatically copy the assets to a local relative directory. Note that `mujoco`
 must be installed and importable for this to work. For example:
 ```python
@@ -210,15 +222,6 @@ xacrodoc input.urdf.xacro mass:=1
 
 # convert to MJCF (requires Mujoco)
 xacrodoc input.urdf.xacro --mjcf -o output.xml
-```
-
-It is recommended to install the command line tool using [uv](https://docs.astral.sh/uv/):
-```
-uv tool install xacrodoc
-```
-or [pipx](https://pipx.pypa.io):
-```
-pipx install xacrodoc
 ```
 
 ## Development
