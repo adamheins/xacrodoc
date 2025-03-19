@@ -8,9 +8,13 @@ from .version import __version__
 from .xacrodoc import XacroDoc
 
 
-def main():
+def main(prog="xacrodoc", args=None):
+    if args is None:
+        args = sys.argv[1:]
+
     parser = argparse.ArgumentParser(
-        description="Convert a xacro file to URDF. Substitution arguments can be passed as key-value pairs of the form `key:=value`."
+        prog=prog,
+        description="Convert a xacro file to URDF. Substitution arguments can be passed as key-value pairs of the form `key:=value`.",
     )
     parser.add_argument(
         "xacro_file", type=str, help="The xacro file to convert."
@@ -36,12 +40,9 @@ def main():
         help="Directories in which to search for packages.",
     )
     parser.add_argument(
-        "-V",
-        "--version",
-        action="version",
-        version=__version__
+        "-V", "--version", action="version", version=__version__
     )
-    args, remainder = parser.parse_known_args()
+    args, remainder = parser.parse_known_args(args)
 
     if args.mjcf:
         try:

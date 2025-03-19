@@ -35,7 +35,7 @@ pip install xacrodoc
 
 From source:
 ```sh
-git clone https://github.com/adamheins/xacrodoc
+git clone --recurse-submodules https://github.com/adamheins/xacrodoc
 cd xacrodoc
 pip install .
 ```
@@ -221,7 +221,9 @@ or [pipx](https://pipx.pypa.io):
 pipx install xacrodoc
 ```
 
-## Testing
+## Development
+
+### Testing
 
 Tests use `pytest`. Some tests depend on additional submodules, which you can
 clone using:
@@ -239,6 +241,14 @@ against different Python versions, use:
 # for example
 uv run --locked --isolated --extra mujoco python=3.9 pytest
 ```
+
+### Docs
+
+Docs are built with `sphinx`. In the `docs` directory, run
+```
+make html
+```
+and the open `build/html/index.html`.
 
 ## License
 
