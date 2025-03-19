@@ -324,6 +324,11 @@ class XacroDoc:
             shutil.copyfile(abspath, asset_dir / name)
 
     def _to_mjcf_spec(self, path, **kwargs):
+        """Convert a Mujoco spec relative to ``path``.
+
+        All ``kwargs`` are used as Mujoco compiler options; see
+        https://mujoco.readthedocs.io/en/stable/modeling.html#curdf
+        """
         import mujoco
 
         # make a copy to avoid changing the original
@@ -340,7 +345,7 @@ class XacroDoc:
         # the URDF file when strippath="false"
         path = Path(path)
         with tempfile.NamedTemporaryFile(
-            suffix=".urdf", dir=path.parent, mode="w", delete_on_close=False
+            suffix=".urdf", dir=path.parent, mode="w", delete=False
         ) as f:
             # write the URDF
             f.write(doc.toxml())
@@ -348,8 +353,14 @@ class XacroDoc:
 
             # convert the URDF to MJCF
             urdf_path = (path.parent / f.name).as_posix()
-            spec = mujoco.MjSpec.from_file(urdf_path)
-            spec.compile()
+            try:
+                spec = mujoco.MjSpec.from_file(urdf_path)
+            except TypeError:
+                # Python 3.8
+                spec = mujoco.MjSpec()
+                spec.from_file(urdf_path)
+        os.unlink(f.name)
+        spec.compile()
         return spec
 
     def to_mjcf_file(self, path, **kwargs):
@@ -367,7 +378,13 @@ class XacroDoc:
             The path to the MJCF XML file to be written.
         """
         path = Path(path)
-        self._to_mjcf_spec(path, **kwargs).to_file(path.as_posix())
+        spec = self._to_mjcf_spec(path, **kwargs)
+        try:
+            spec.to_file(path.as_posix())
+        except AttributeError:
+            # Python 3.8
+            with open(path, "w") as f:
+                f.write(spec.to_xml())
 
     def to_mjcf_string(self, **kwargs):
         """Convert to a string in Mujoco MJCF XML format.

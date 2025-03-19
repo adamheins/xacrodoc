@@ -1,0 +1,22 @@
+<mujoco model="threelink">
+  <compiler angle="radian"/>
+
+  <worldbody>
+    <geom size="0.05 0.05 0.1" pos="0 0 0.1" type="box" rgba="0 0 0 1"/>
+    <body name="link1" pos="0 0.1 0.15">
+      <inertial pos="0 0 0.1" mass="1" diaginertia="0.00833333 0.00833333 0.00166667"/>
+      <joint name="link1_joint" pos="0 0 0" axis="0 1 0" actuatorfrcrange="-100 100"/>
+      <geom size="0.05 0.05 0.15" pos="0 0 0.1" type="box" rgba="0.8 0 0 1"/>
+      <body name="link2" pos="0 -0.1 0.2">
+        <inertial pos="0 0 0.1" mass="1" diaginertia="0.00833333 0.00833333 0.00166667"/>
+        <joint name="link2_joint" pos="0 0 0" axis="0 1 0" actuatorfrcrange="-100 100"/>
+        <geom size="0.05 0.05 0.15" pos="0 0 0.1" type="box" rgba="0.8 0 0 1"/>
+        <body name="link3" pos="0 0.1 0.2">
+          <inertial pos="0 0 0.1" mass="1" diaginertia="0.00833333 0.00833333 0.00166667"/>
+          <joint name="link3_joint" pos="0 0 0" axis="0 1 0" actuatorfrcrange="-100 100"/>
+          <geom size="0.05 0.05 0.15" pos="0 0 0.1" type="box" rgba="0.8 0 0 1"/>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+</mujoco>

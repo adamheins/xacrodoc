@@ -16,7 +16,7 @@ class PackageFinder:
 
     def __init__(self):
         # list of tuples (func, err): func(pkg) looks for the path to package
-        # `pkg`, raised error of type `err` if it is not found
+        # `pkg`, raises error of type `err` if it is not found
         self.finder_funcs = []
 
         self.package_cache = {}

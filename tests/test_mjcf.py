@@ -40,7 +40,15 @@ def test_mjcf():
 
 
 def test_mjcf_existing_mujoco_ext():
+    with open("files/mjcf/threelink.xml") as f:
+        expected = f.read()
+
     # check that this works when a mujoco extension is already present
+    doc = XacroDoc.from_file("files/xacro/threelink_mujoco.urdf.xacro")
+    assert doc.to_mjcf_string().strip() == expected.strip()
+
+
+def test_to_mjcf_file():
     doc = XacroDoc.from_file("files/xacro/threelink_mujoco.urdf.xacro")
     with tempfile.TemporaryDirectory() as tmp:
         path = Path(tmp) / "threelink.xml"

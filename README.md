@@ -239,7 +239,7 @@ To test the Mujoco MJCF features, you'll also need `mujoco` installed. To test
 against different Python versions, use:
 ```
 # for example
-uv run --locked --isolated --extra mujoco python=3.9 pytest
+uv run --locked --isolated --extra mujoco --python=3.9 pytest
 ```
 
 ### Docs
