@@ -34,7 +34,11 @@ def test_version(capsys):
 def test_urdf(capsys):
     with open("files/urdf/threelink.urdf") as f:
         expected = f.read()
-    xacrodoc.cli.main(args=["files/xacro/threelink.urdf.xacro"])
+
+    with pytest.raises(SystemExit) as e:
+        xacrodoc.cli.main(args=["files/xacro/threelink.urdf.xacro"])
+    assert e.value.code == 0
+
     out, err = capsys.readouterr()
     assert out.strip() == expected.strip()
 
@@ -42,16 +46,22 @@ def test_urdf(capsys):
 def test_subargs(capsys):
     with open("files/urdf/tool2.urdf") as f:
         expected = f.read()
-    xacrodoc.cli.main(args=["files/xacro/tool.urdf.xacro", "mass:=2"])
+
+    with pytest.raises(SystemExit) as e:
+        xacrodoc.cli.main(args=["files/xacro/tool.urdf.xacro", "mass:=2"])
+    assert e.value.code == 0
+
     out, err = capsys.readouterr()
     assert out.strip() == expected.strip()
 
 
 def test_localize_assets(capsys):
     with tempfile.TemporaryDirectory() as asset_dir:
-        xacrodoc.cli.main(
-            args=["files/xacro/mesh2.urdf.xacro", "-c", asset_dir]
-        )
+        with pytest.raises(SystemExit) as e:
+            xacrodoc.cli.main(
+                args=["files/xacro/mesh2.urdf.xacro", "-c", asset_dir]
+            )
+        assert e.value.code == 0
         out, err = capsys.readouterr()
 
         files = os.listdir(asset_dir)
@@ -62,9 +72,11 @@ def test_localize_assets(capsys):
 
 def test_package_paths(capsys):
     # here we are really just testing that the argument is accepted
-    xacrodoc.cli.main(
-        args=["files/xacro/tool.urdf.xacro", "-d", "..", "mass:=2"]
-    )
+    with pytest.raises(SystemExit) as e:
+        xacrodoc.cli.main(
+            args=["files/xacro/tool.urdf.xacro", "-d", "..", "mass:=2"]
+        )
+    assert e.value.code == 0
     out, err = capsys.readouterr()
 
 
@@ -74,5 +86,7 @@ def test_mjcf(capsys):
     except ModuleNotFoundError:
         pytest.skip("mujoco could not be imported")
 
-    xacrodoc.cli.main(args=["files/xacro/mesh2.urdf.xacro", "--mjcf"])
+    with pytest.raises(SystemExit) as e:
+        xacrodoc.cli.main(args=["files/xacro/mesh2.urdf.xacro", "--mjcf"])
+    assert e.value.code == 0
     out, err = capsys.readouterr()

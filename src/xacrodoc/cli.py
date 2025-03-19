@@ -50,7 +50,7 @@ def main(prog="xacrodoc", args=None):
         except ModuleNotFoundError:
             error(f"Error: could not import mujoco")
             print("You must have mujoco installed to export MJCF XML files.")
-            return 1
+            sys.exit(1)
 
     # substitution arguments
     subargs = {}
@@ -70,10 +70,10 @@ def main(prog="xacrodoc", args=None):
     except PackageNotFoundError as e:
         error(f"Error: package not found: {e}")
         print("You can specify additional package directories with --pkg-dir")
-        return 1
+        sys.exit(1)
     except Exception as e:
         error(f"Error: {e}")
-        return 1
+        sys.exit(1)
 
     # it is recommended to localize assets if converted to MJCF
     mjcf_compiler_opts = {}
@@ -101,8 +101,5 @@ def main(prog="xacrodoc", args=None):
         else:
             s = doc.to_urdf_string()
         print(s)
-    return 0
+    sys.exit(0)
 
-
-if __name__ == "__main__":
-    sys.exit(main())
