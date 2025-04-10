@@ -43,10 +43,15 @@ It is recommended to install the command line tool into an isolated environment
 using [uv](https://docs.astral.sh/uv/):
 ```
 uv tool install xacrodoc
+
+# for conversion to MJCF files, use:
+uv tool install "xacrodoc[mujoco]"
 ```
 or [pipx](https://pipx.pypa.io):
 ```
 pipx install xacrodoc
+# or
+pipx install "xacrodoc[mujoco]"
 ```
 
 ## Python Usage
@@ -133,7 +138,7 @@ doc = xd.XacroDoc.from_includes(includes)
 # includes can also use $(find ...) directives:
 includes = [
     "$(find my_ros_package)/urdf/robot_base.urdf.xacro",
-    "$(find another_ros_package)/urdf/"robot_arm.urdf.xacro",
+    "$(find another_ros_package)/urdf/robot_arm.urdf.xacro",
     "tool.urdf.xacro"
 ]
 doc = xd.XacroDoc.from_includes(includes)

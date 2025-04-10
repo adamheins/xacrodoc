@@ -9,10 +9,16 @@ from xml.dom.minidom import parseString
 from . import packages
 from .xacro import xacro
 from .xacro.xacro import substitution_args
+from .xacro.xacro.color import warning
 
 
 # monkey patch to replace xacro's package finding infrastructure
 substitution_args._eval_find = lambda pkg: packages.get_path(pkg)
+
+# def eval_find(pkg):
+#     print(pkg)
+#     return packages.get_path(pkg)
+# substitution_args._eval_find = eval_find
 
 
 def _xacro_include(path):
@@ -97,10 +103,18 @@ def _resolve_packages(doc):
     doc : xml.dom.minidom.Document
         The XML document, which is modified in place.
     """
+    pkg_regex = re.compile(r"package://([ \w-]+)/")
     for e in _urdf_elements_with_filenames(doc):
         filename = e.getAttribute("filename")
         if filename.startswith("package://"):
-            pkg = re.search(r"package://([\w-]+)", filename).group(1)
+            pkg = pkg_regex.search(filename).group(1)
+
+            # ROS doesn't support spaces in package names, and neither do we
+            # explicitly check and tell the user about this
+            if " " in pkg:
+                raise ValueError(
+                    f"Package name '{pkg}' contains spaces, which is not supported."
+                )
             abspath = Path(packages.get_path(pkg)).absolute().as_posix()
             filename = re.sub(f"package://{pkg}", f"file://{abspath}", filename)
         e.setAttribute("filename", filename)
@@ -114,11 +128,13 @@ def _remove_file_protocols(doc):
     doc : xml.dom.minidom.Document
         The XML document, which is modified in place.
     """
+    prefix = "file://"
+    prefix_len = len(prefix)
     for e in _urdf_elements_with_filenames(doc):
         filename = e.getAttribute("filename")
-        if filename.startswith("file://"):
-            filename = filename[7:]
-        e.setAttribute("filename", filename)
+        if filename.startswith(prefix):
+            filename = filename[prefix_len:]
+            e.setAttribute("filename", filename)
 
 
 def _set_mjcf_compile_options(doc, **kwargs):

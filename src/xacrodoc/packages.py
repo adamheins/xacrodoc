@@ -43,13 +43,16 @@ class PackageFinder:
 
         Parameters
         ----------
-        paths : Iterable
-            A list of paths in which to search for packages. Internally, these
-            are passed to `rospkg.RosPack`.
+        paths : Iterable or str or Path
+            A path or list of paths (represented as `str` or `Path`) in which
+            to search for packages. Internally, these are passed to
+            `rospkg.RosPack`.
         priority : int
             Priority for the search: lower means the package is looked for
             using this method earlier.
         """
+        if not isinstance(paths, (list, tuple)):
+            paths = [paths]
         rospack = rospkg.RosPack(ros_paths=paths)
         self.finder_funcs.insert(
             priority, (rospack.get_path, rospkg.common.ResourceNotFound)
