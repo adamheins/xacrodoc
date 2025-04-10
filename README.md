@@ -7,7 +7,8 @@ not.
 
 ## Why?
 
-* Compile xacro files to URDF or Mujoco MJCF files without a ROS installation.
+* Compile xacro files to URDF or Mujoco MJCF files without a ROS installation
+  (this includes converting plain URDF to MJCF).
 * Avoid the clutter of redundant compiled raw URDFs; only keep the xacro
   source files.
 * Programmatically compose multiple xacro files and apply substitution
