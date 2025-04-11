@@ -1,6 +1,6 @@
 [project]
 name = "xacrodoc"
-version = "1.0.0"
+version = "1.1.0"
 description = "Compile xacro files to URDF or MJCF from Python or the command line (no ROS required)."
 authors = [
   {name = "Adam Heins", email = "mail@adamheins.com"}

@@ -15,11 +15,6 @@ from .xacro.xacro.color import warning
 # monkey patch to replace xacro's package finding infrastructure
 substitution_args._eval_find = lambda pkg: packages.get_path(pkg)
 
-# def eval_find(pkg):
-#     print(pkg)
-#     return packages.get_path(pkg)
-# substitution_args._eval_find = eval_find
-
 
 def _xacro_include(path):
     return f'<xacro:include filename="{path}"/>'
@@ -113,7 +108,7 @@ def _resolve_packages(doc):
             # explicitly check and tell the user about this
             if " " in pkg:
                 raise ValueError(
-                    f"Package name '{pkg}' contains spaces, which is not supported."
+                    f"Package name '{pkg}' contains spaces, which is not allowed."
                 )
             abspath = Path(packages.get_path(pkg)).absolute().as_posix()
             filename = re.sub(f"package://{pkg}", f"file://{abspath}", filename)
