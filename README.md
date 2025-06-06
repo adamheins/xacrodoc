@@ -7,7 +7,8 @@ not.
 
 ## Why?
 
-* Compile xacro files to URDF or Mujoco MJCF files without a ROS installation.
+* Compile xacro files to URDF or Mujoco MJCF files without a ROS installation
+  (this includes converting plain URDF to MJCF).
 * Avoid the clutter of redundant compiled raw URDFs; only keep the xacro
   source files.
 * Programmatically compose multiple xacro files and apply substitution
@@ -43,10 +44,15 @@ It is recommended to install the command line tool into an isolated environment
 using [uv](https://docs.astral.sh/uv/):
 ```
 uv tool install xacrodoc
+
+# for conversion to MJCF files, use:
+uv tool install "xacrodoc[mujoco]"
 ```
 or [pipx](https://pipx.pypa.io):
 ```
 pipx install xacrodoc
+# or
+pipx install "xacrodoc[mujoco]"
 ```
 
 ## Python Usage
@@ -133,7 +139,7 @@ doc = xd.XacroDoc.from_includes(includes)
 # includes can also use $(find ...) directives:
 includes = [
     "$(find my_ros_package)/urdf/robot_base.urdf.xacro",
-    "$(find another_ros_package)/urdf/"robot_arm.urdf.xacro",
+    "$(find another_ros_package)/urdf/robot_arm.urdf.xacro",
     "tool.urdf.xacro"
 ]
 doc = xd.XacroDoc.from_includes(includes)

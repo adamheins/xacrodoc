@@ -58,6 +58,33 @@ def test_from_includes_ros_find():
     assert doc.to_urdf_string().strip() == expected.strip()
 
 
+def test_pkg_with_spaces():
+    with pytest.raises(ValueError):
+        doc = XacroDoc.from_file("files/xacro/mesh_with_spaces.urdf.xacro")
+
+
+def test_look_in():
+    path = "files/xacro/mesh_external_package.urdf.xacro"
+
+    # we need to look in the package directory to find the file
+    with pytest.raises(packages.PackageNotFoundError):
+        doc = XacroDoc.from_file(path)
+
+    # pass a string
+    packages.look_in("packages")
+    doc = XacroDoc.from_file(path)
+    packages.reset()
+
+    # pass a Path
+    packages.look_in(Path("packages"))
+    doc = XacroDoc.from_file(path)
+    packages.reset()
+
+    # pass a list
+    packages.look_in(["packages"])
+    doc = XacroDoc.from_file(path)
+
+
 def test_subargs():
     subargs = {"mass": "2"}
     doc = XacroDoc.from_file("files/xacro/tool.urdf.xacro", subargs=subargs)
