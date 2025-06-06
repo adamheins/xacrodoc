@@ -70,7 +70,7 @@ class PackageFinder:
 
         def finder_func(pkg):
             path = resolved
-            while path.as_posix() != path.root:
+            while path != path.parent:
 
                 # check for package.xml, get the package name from it
                 package_xml_path = path / rospkg.common.PACKAGE_FILE
