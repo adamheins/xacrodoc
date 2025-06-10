@@ -181,10 +181,11 @@ converting to MJCF.
 
 Mujoco has basic support for URDFs, but natively uses its own MJCF XML format.
 If you want to use Mujoco, you probably want to convert any xacro file you have
-to MJCF. Mujoco automatically converts absolute file paths to assets like mesh
-files to relative paths. xacrodoc makes it easy to disable this behaviour or
-automatically copy the assets to a local relative directory. Note that `mujoco`
-must be installed and importable for this to work. For example:
+to MJCF. When handling URDFs, Mujoco automatically converts absolute file paths
+for assets like mesh files to relative paths. xacrodoc makes it easy to disable
+this behaviour or automatically copy the assets to a local relative directory.
+Note that `mujoco` must be installed and importable for this to work. For
+example:
 ```python
 from xacrodoc import XacroDoc
 
