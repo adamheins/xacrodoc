@@ -55,7 +55,11 @@ def main(prog="xacrodoc", args=None):
     # substitution arguments
     subargs = {}
     for arg in remainder:
-        key, value = arg.split(":=")
+        try:
+            key, value = arg.split(":=")
+        except ValueError:
+            error(f"Error: expected substitution argument of the form 'key:=value', but got '{arg}'")
+            sys.exit(1)
         subargs[key] = value
 
     # package directories
