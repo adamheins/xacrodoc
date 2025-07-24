@@ -173,9 +173,7 @@ xacrodoc automatically expands these paths out to full absolute paths, e.g.,
 file:///abs/path/to/mesh
 ```
 but this can be disabled by passing `resolve_packages=False` to the `XacroDoc`
-constructor. Note that the `file://` protocol prefix can be removed by passing
-`remove_protocols=True` to the `XacroDoc` constructor, which is useful when
-converting to MJCF.
+constructor.
 
 ### Conversion to MJCF format
 
