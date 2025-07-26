@@ -6,5 +6,5 @@
 	url = https://github.com/UniversalRobots/Universal_Robots_ROS2_Description.git
 [submodule "src/xacrodoc/xacro"]
 	path = src/xacrodoc/xacro
-	url = git@github.com:ros/xacro.git
+	url = https://github.com/ros/xacro.git
 	branch = ros2
