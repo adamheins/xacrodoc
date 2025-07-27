@@ -1432,7 +1432,6 @@ source = { editable = "." }
 dependencies = [
     { name = "docutils", version = "0.20.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
     { name = "docutils", version = "0.21.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
-    { name = "pyyaml" },
     { name = "rospkg" },
     { name = "xacro" },
 ]
@@ -1459,7 +1458,6 @@ docs = [
 requires-dist = [
     { name = "docutils", specifier = "!=0.21" },
     { name = "mujoco", marker = "extra == 'mujoco'", specifier = ">=3.2.3" },
-    { name = "pyyaml", specifier = ">=6.0" },
     { name = "rospkg", specifier = ">=1.5.0" },
     { name = "xacro", git = "https://github.com/ros/xacro?rev=0d1741a34df16ffe76096a8db401a93edddadc58" },
 ]
