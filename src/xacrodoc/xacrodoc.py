@@ -13,6 +13,8 @@ from .xacro.xacro.color import warning
 
 
 # monkey patch to replace xacro's package finding infrastructure
+# NOTE: we could include xacro as a regular dependency if it was up to date on
+# PyPI, but until it is we have to vendor the xacro code with this repo.
 substitution_args._eval_find = lambda pkg: packages.get_path(pkg)
 
 
