@@ -4,7 +4,3 @@
 [submodule "tests/packages/Universal_Robots_ROS2_Description"]
 	path = tests/packages/Universal_Robots_ROS2_Description
 	url = https://github.com/UniversalRobots/Universal_Robots_ROS2_Description.git
-[submodule "src/xacrodoc/xacro"]
-	path = src/xacrodoc/xacro
-	url = https://github.com/ros/xacro.git
-	branch = ros2

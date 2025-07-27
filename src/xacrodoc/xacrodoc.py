@@ -6,13 +6,14 @@ import shutil
 import tempfile
 from xml.dom.minidom import parseString
 
+import xacro
+from xacro import substitution_args
+from xacro.color import warning
+
 from . import packages
-from .xacro import xacro
-from .xacro.xacro import substitution_args
-from .xacro.xacro.color import warning
 
 
-# monkey patch to replace xacro's package finding infrastructure
+# monkey patch to replace xacro's package-finding infrastructure
 substitution_args._eval_find = lambda pkg: packages.get_path(pkg)
 
 

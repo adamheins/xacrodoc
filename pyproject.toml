@@ -12,6 +12,7 @@ dependencies = [
   "pyyaml>=6.0",
   "rospkg>=1.5.0",
   "docutils!=0.21",
+  "xacro",
 ]
 
 [project.optional-dependencies]
@@ -37,6 +38,9 @@ build-backend = "hatchling.build"
 
 [tool.uv]
 default-groups = ["dev", "docs"]
+
+[tool.uv.sources]
+xacro = { git = "https://github.com/ros/xacro", rev = "0d1741a34df16ffe76096a8db401a93edddadc58" }
 
 [tool.black]
 line-length = 80

@@ -1,8 +1,8 @@
 import argparse
 import sys
 
-from .xacro.xacro.color import error
-from .xacro.xacro import XacroException
+from xacro.color import error
+from xacro import XacroException
 from .packages import look_in, PackageNotFoundError
 from .version import __version__
 from .xacrodoc import XacroDoc
