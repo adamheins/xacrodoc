@@ -32,6 +32,9 @@ for packages if it is available.
 The library can be installed from pip:
 ```sh
 pip install xacrodoc
+
+# or to also include conversion to MJCF files:
+pip install "xacrodoc[mujoco]"
 ```
 or from source:
 ```sh
