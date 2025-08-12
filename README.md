@@ -120,6 +120,11 @@ xd.packages.walk_up_from("some/other/path")
 # just like in a ROS workspace - the same package search logic is used (since
 # we actually use rospkg under the hood)
 xd.packages.look_in(["somewhere/I/keep/packages", "another/directory/with/packages"])
+
+# you can bypass ROS conventions entirely by directly providing a dict of
+# package names and paths; no package.xml is required to identify packages in
+# this case
+xd.packages.update_package_cache({"my_package": "path/to/my_package"})
 ```
 
 ### Multiple URDFs
