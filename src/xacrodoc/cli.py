@@ -3,7 +3,7 @@ import sys
 
 from .xacro.xacro.color import error
 from .xacro.xacro import XacroException
-from .packages import look_in, PackageNotFoundError
+from .packages import look_in, update_package_cache, PackageNotFoundError
 from .version import __version__
 from .xacrodoc import XacroDoc
 
@@ -40,6 +40,14 @@ def main(prog="xacrodoc", args=None):
         help="Directories in which to search for packages.",
     )
     parser.add_argument(
+        "-p",
+        "--pkg-path",
+        type=str,
+        action="extend",
+        nargs=1,
+        help="Mappings of package names to paths.",
+    )
+    parser.add_argument(
         "-V", "--version", action="version", version=__version__
     )
     args, remainder = parser.parse_known_args(args)
@@ -56,15 +64,27 @@ def main(prog="xacrodoc", args=None):
     subargs = {}
     for arg in remainder:
         try:
-            key, value = arg.split(":=")
+            key, value = arg.split(":=", maxsplit=1)
         except ValueError:
-            error(f"Error: expected substitution argument of the form 'key:=value', but got '{arg}'")
+            error(f"Error: expected substitution argument of the form 'name:=value', but got '{arg}'")
             sys.exit(1)
         subargs[key] = value
 
     # package directories
     if args.pkg_dir is not None:
         look_in(args.pkg_dir)
+
+    # direct mapping from package names to paths
+    if args.pkg_path is not None:
+        pkg_cache = {}
+        for pkg_path in args.pkg_path:
+            try:
+                name, path = pkg_path.split(":=", maxsplit=1)
+            except ValueError:
+                error(f"Error: expected package path mapping of the form 'name:=path', but got '{pkg_path}'")
+                sys.exit(1)
+            pkg_cache[name] = path
+        update_package_cache(pkg_cache)
 
     # convert file with error handling
     # if converting to mujoco format, then we need to remove the file://

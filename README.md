@@ -93,7 +93,7 @@ path = doc.to_temp_urdf_file()
 # ...do stuff with path...
 
 # manually delete the temp file
-os.unlink(path)
+os.remove(path)
 ```
 
 ### Finding ROS packages
@@ -227,10 +227,15 @@ xacrodoc input.urdf.xacro -o output.urdf
 
 # provide directories in which to look for packages referenced in
 # input.urdf.xacro (-d flag is needed before each one to disambiguate from
-# substitution arguments)
+# substitution arguments); a common usecase would be providing the path to
+# catkin workspaces
 xacrodoc input.urdf.xacro -d ~/my_pkg_dir -d ~/my_other_pkg_dir
 
-# substitution arguments use := notation, like xacro
+# alternatively, package name/path mappings can be directly supplied using the
+# -p flag; := is used to separate the name and path:
+xacrodoc input.urdf.xacro -p my_pkg:=~/path/to/my_pkg -p other_pkg:=/home/foo/packages/other_pkg
+
+# substitution arguments also use := notation, like xacro
 xacrodoc input.urdf.xacro mass:=1
 
 # convert to MJCF (requires Mujoco)
