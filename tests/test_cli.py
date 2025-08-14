@@ -62,7 +62,6 @@ def test_localize_assets(capsys):
                 args=["files/xacro/mesh2.urdf.xacro", "-c", asset_dir]
             )
         assert e.value.code == 0
-        out, err = capsys.readouterr()
 
         files = os.listdir(asset_dir)
         assert len(files) == 2
@@ -71,13 +70,33 @@ def test_localize_assets(capsys):
 
 
 def test_package_paths(capsys):
-    # here we are really just testing that the argument is accepted
+    # first check it fails without the package path
+    with pytest.raises(SystemExit) as e:
+        xacrodoc.cli.main(args=["files/xacro/mesh_external_package.urdf.xacro"])
+    assert e.value.code == 1
+
+    # then check it works when we provide the package path
     with pytest.raises(SystemExit) as e:
         xacrodoc.cli.main(
-            args=["files/xacro/tool.urdf.xacro", "-d", "..", "mass:=2"]
+            args=[
+                "files/xacro/mesh_external_package.urdf.xacro",
+                "-p",
+                "my_pkg:=packages/my_pkg",
+            ]
         )
     assert e.value.code == 0
-    out, err = capsys.readouterr()
+
+    # alternatively, we can just set a package directory to automatically find
+    # packages
+    with pytest.raises(SystemExit) as e:
+        xacrodoc.cli.main(
+            args=[
+                "files/xacro/mesh_external_package.urdf.xacro",
+                "-d",
+                "packages",
+            ]
+        )
+    assert e.value.code == 0
 
 
 def test_mjcf(capsys):
@@ -89,4 +108,3 @@ def test_mjcf(capsys):
     with pytest.raises(SystemExit) as e:
         xacrodoc.cli.main(args=["files/xacro/mesh2.urdf.xacro", "--mjcf"])
     assert e.value.code == 0
-    out, err = capsys.readouterr()
