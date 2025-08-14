@@ -45,7 +45,7 @@ def main(prog="xacrodoc", args=None):
         type=str,
         action="extend",
         nargs=1,
-        help="Mappings of package names to paths.",
+        help="Mappings of package names to paths, of the form 'name:=path'.",
     )
     parser.add_argument(
         "-V", "--version", action="version", version=__version__
