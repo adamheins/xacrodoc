@@ -93,7 +93,8 @@ def main(prog="xacrodoc", args=None):
         doc = XacroDoc.from_file(args.xacro_file, subargs=subargs)
     except PackageNotFoundError as e:
         error(f"Error: package not found: {e}")
-        print("You can specify additional package directories with --pkg-dir")
+        print("You can specify additional package locations with --pkg-dir or --pkg-path.")
+        print("See --help for more details.")
         sys.exit(1)
     except Exception as e:
         error(f"Error: {e}")
