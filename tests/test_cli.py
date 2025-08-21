@@ -68,6 +68,27 @@ def test_localize_assets(capsys):
         assert "base.stl" in files
         assert "base_001.stl" in files
 
+    # also test when we have an output file
+    with tempfile.TemporaryDirectory() as dir:
+        asset_dir = os.path.join(dir, "assets")
+        urdf_file = os.path.join(dir, "output.urdf")
+        with pytest.raises(SystemExit) as e:
+            xacrodoc.cli.main(
+                args=[
+                    "files/xacro/mesh2.urdf.xacro",
+                    "-c",
+                    asset_dir,
+                    "-o",
+                    urdf_file,
+                ]
+            )
+        assert e.value.code == 0
+
+        files = os.listdir(asset_dir)
+        assert len(files) == 2
+        assert "base.stl" in files
+        assert "base_001.stl" in files
+
 
 def test_package_paths(capsys):
     # first check it fails without the package path

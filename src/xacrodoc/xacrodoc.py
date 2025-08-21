@@ -298,8 +298,8 @@ class XacroDoc:
         """Copy all assets to a local directory and update all filenames in the
         document accordingly.
 
-        This is useful when converting to MJCF format. The local assets are
-        given unique names in the case of name collisions.
+        This is particularly useful when converting to MJCF format. The local
+        assets are given unique names in the case of name collisions.
 
         Parameters
         ----------
@@ -329,6 +329,9 @@ class XacroDoc:
                 path_map[abspath] = basename
 
             # point to the new path
+            # note that we use absolute paths here, as raw URDF does not
+            # support relative paths in filenames (see
+            # https://robotics.stackexchange.com/a/81176)
             new_path = (asset_dir / basename).absolute().as_posix()
             e.setAttribute("filename", f"file://{new_path}")
 

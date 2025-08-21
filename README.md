@@ -201,6 +201,8 @@ doc = XacroDoc.from_file("input.urdf.xacro")
 doc.to_mjcf_file("output.xml", strippath="false")
 
 # copy all the referenced assets to the directory `assets` before conversion
+# name collisions between assets with the same filename are automatically
+# resolved by appending numbers as needed
 doc.localize_assets("assets")
 doc.to_mjcf_file("output.xml", strippath="true", meshdir="assets")
 

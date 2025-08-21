@@ -1,4 +1,6 @@
 import argparse
+import os
+from pathlib import Path
 import sys
 
 from .xacro.xacro.color import error
@@ -87,8 +89,6 @@ def main(prog="xacrodoc", args=None):
         update_package_cache(pkg_cache)
 
     # convert file with error handling
-    # if converting to mujoco format, then we need to remove the file://
-    # protocol from file paths
     try:
         doc = XacroDoc.from_file(args.xacro_file, subargs=subargs)
     except PackageNotFoundError as e:
@@ -100,11 +100,11 @@ def main(prog="xacrodoc", args=None):
         error(f"Error: {e}")
         sys.exit(1)
 
-    # it is recommended to localize assets if converted to MJCF
+    # it is recommended to localize assets if converting to MJCF
     mjcf_compiler_opts = {}
     if args.copy_assets_to is not None:
         doc.localize_assets(args.copy_assets_to)
-        print(f"Copied assets to {args.copy_assets_to}")
+        print(f"Copied assets to '{args.copy_assets_to}'")
         if args.output is not None:
             parent = Path(args.output).parent
             meshdir = os.path.relpath(args.copy_assets_to, parent)
