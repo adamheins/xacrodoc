@@ -16,14 +16,16 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('../xacrodoc'))
 # print(os.path.abspath('../../xacrodoc'))
+import datetime
 import xacrodoc
 
 
 # -- Project information -----------------------------------------------------
 
 project = 'xacrodoc'
-copyright = '2025, Adam Heins'
+year = datetime.datetime.now().year
 author = 'Adam Heins'
+copyright = f'{year}, {author}'
 
 # The short X.Y version
 version = xacrodoc.__version__
