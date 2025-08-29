@@ -5,6 +5,7 @@ import re
 import shutil
 import tempfile
 from xml.dom.minidom import parseString
+import warnings
 
 from . import packages
 from .xacro import xacro
@@ -117,23 +118,23 @@ def _resolve_packages(doc):
         e.setAttribute("filename", filename)
 
 
-def _remove_file_protocols(doc):
-    """Remove file:// prefix from all asset filenames.
-
-    Parameters
-    ----------
-    doc : xml.dom.minidom.Document
-        The XML document, which is modified in place.
-    """
-    prefix = "file://"
-    prefix_len = len(prefix)
-    for e in _urdf_elements_with_filenames(doc):
-        filename = e.getAttribute("filename")
-        if filename.startswith(prefix):
-            filename = filename[prefix_len:]
-            e.setAttribute("filename", filename)
-
-
+# def _remove_file_protocols(doc):
+#     """Remove file:// prefix from all asset filenames.
+#
+#     Parameters
+#     ----------
+#     doc : xml.dom.minidom.Document
+#         The XML document, which is modified in place.
+#     """
+#     prefix = "file://"
+#     prefix_len = len(prefix)
+#     for e in _urdf_elements_with_filenames(doc):
+#         filename = e.getAttribute("filename")
+#         if filename.startswith(prefix):
+#             filename = filename[prefix_len:]
+#             e.setAttribute("filename", filename)
+#
+#
 def _set_mjcf_compile_options(doc, **kwargs):
     """Add or set compiler options in the mujoco extension.
 
@@ -201,6 +202,39 @@ def _make_name_unique(name, existing_names):
     raise ValueError(f"Failed to generate unique name for {name}.")
 
 
+def _split_path_protocol(path):
+    delim = "://"
+    parts = path.split(delim, maxsplit=1)
+    path = parts[-1]
+    protocol = parts[0] + delim if len(parts) == 2 else ""
+    return protocol, path
+
+
+def _strip_path_protocol(path):
+    return _split_path_protocol(path)[1]
+
+
+def _copy_dom(dom):
+    return parseString(dom.toxml())
+
+
+def _copy_dom_change_paths(dom, file_protocols=True, paths_relative_to=None):
+    dom = _copy_dom(dom)
+    for e in _urdf_elements_with_filenames(dom):
+        path = e.getAttribute("filename")
+        path = _strip_path_protocol(path)
+
+        if paths_relative_to is not None:
+            path = os.path.relpath(path, start=paths_relative_to)
+
+        prefix = ""
+        if file_protocols:
+            prefix = "file://"
+
+        e.setAttribute("filename", f"{prefix}{path}")
+    return dom
+
+
 class XacroDoc:
     """Convenience class to build URDF strings and files out of xacro components.
 
@@ -233,7 +267,10 @@ class XacroDoc:
         max_runs=10,
         resolve_packages=True,
     ):
-        # TODO rename to dom?
+        warnings.warn(
+            "Calling XacroDoc's `__init__` directly is deprecated and its behaviour will change in a future release. Please use the `from_string` method instead.",
+            DeprecationWarning,
+        )
         self.doc = _compile_xacro_file(
             text=text,
             subargs=subargs,
@@ -241,6 +278,23 @@ class XacroDoc:
         )
         if resolve_packages:
             _resolve_packages(self.doc)
+
+    @classmethod
+    def from_string(
+        cls, text, subargs=None, max_runs=10, resolve_packages=True
+    ):
+        doc = _compile_xacro_file(
+            text=text,
+            subargs=subargs,
+            max_runs=max_runs,
+        )
+        if resolve_packages:
+            _resolve_packages(doc)
+
+        # TODO: until we change __init__
+        obj = cls.__new__(cls)
+        obj.doc = doc
+        return obj
 
     @classmethod
     def from_file(cls, path, walk_up=True, **kwargs):
@@ -259,7 +313,7 @@ class XacroDoc:
 
         with open(path) as f:
             text = f.read()
-        return cls(text, **kwargs)
+        return cls.from_string(text, **kwargs)
 
     @classmethod
     def from_package_file(cls, package_name, relative_path, **kwargs):
@@ -292,7 +346,7 @@ class XacroDoc:
         for incl in includes:
             s += _xacro_include(incl)
         s += "</robot>"
-        return cls(s, **kwargs)
+        return cls.from_string(s, **kwargs)
 
     def localize_assets(self, asset_dir):
         """Copy all assets to a local directory and update all filenames in the
@@ -315,25 +369,19 @@ class XacroDoc:
         asset_dir.mkdir(exist_ok=True)
 
         for e in _urdf_elements_with_filenames(self.doc):
-            abspath = e.getAttribute("filename")
+            path = e.getAttribute("filename")
+            protocol, path = _split_path_protocol(path)
 
-            # remove file protocol if it exists
-            if abspath.startswith("file://"):
-                abspath = abspath[7:]
-
-            if abspath in path_map:
+            if path in path_map:
                 basename = path_map[abspath]
             else:
-                basename = _make_name_unique(Path(abspath).name, basenames)
+                basename = _make_name_unique(Path(path).name, basenames)
                 basenames.add(basename)
-                path_map[abspath] = basename
+                path_map[path] = basename
 
             # point to the new path
-            # note that we use absolute paths here, as raw URDF does not
-            # support relative paths in filenames (see
-            # https://robotics.stackexchange.com/a/81176)
             new_path = (asset_dir / basename).absolute().as_posix()
-            e.setAttribute("filename", f"file://{new_path}")
+            e.setAttribute("filename", f"{protocol}{new_path}")
 
         # copy all the assets
         for abspath, name in path_map.items():
@@ -347,14 +395,10 @@ class XacroDoc:
         """
         import mujoco
 
-        # make a copy to avoid changing the original
-        doc = parseString(self.doc.toxml())
-
-        # strip off file:// protocols, which mujoco does not support
-        _remove_file_protocols(doc)
+        dom = _copy_dom_change_paths(self.doc, file_protocols=False)
 
         # set compile options
-        _set_mjcf_compile_options(doc, **kwargs)
+        _set_mjcf_compile_options(dom, **kwargs)
 
         # we need to create a temporary URDF file (rather than just work with
         # the XML string) because mujoco will use paths to assets relative to
@@ -364,7 +408,7 @@ class XacroDoc:
             suffix=".urdf", dir=path.parent, mode="w", delete=False
         ) as f:
             # write the URDF
-            f.write(doc.toxml())
+            f.write(dom.toxml())
             f.close()
 
             # convert the URDF to MJCF
@@ -418,7 +462,14 @@ class XacroDoc:
         """
         return self._to_mjcf_spec(".", **kwargs).to_xml()
 
-    def to_urdf_file(self, path, compare_existing=True, verbose=False):
+    def to_urdf_file(
+        self,
+        path,
+        compare_existing=True,
+        file_protocols=True,
+        relative_paths=False,
+        verbose=False,
+    ):
         """Write the URDF to a file.
 
         Parameters
@@ -430,11 +481,20 @@ class XacroDoc:
             and only write back to it if the parsed URDF is different than the
             file content. This avoids some race conditions if the file is being
             compiled by multiple processes concurrently.
+        relative_paths : bool
+            If ``True``, convert all asset filenames to be relative to the
+            specified output ``path``. Otherwise, absolute paths are used. Note
+            that some applications may not support relative paths.
         verbose : bool
             Set to ``True`` to print information about xacro compilation,
             ``False`` otherwise.
         """
-        s = self.to_urdf_string(pretty=True)
+        paths_relative_to = path if relative_paths else None
+        s = self.to_urdf_string(
+            file_protocols=file_protocols,
+            paths_relative_to=paths_relative_to,
+            pretty=True,
+        )
 
         # if the full path already exists, we can check if the contents are the
         # same to avoid writing it if it hasn't changed. This avoids some race
@@ -503,7 +563,9 @@ class XacroDoc:
         finally:
             os.remove(path)
 
-    def to_urdf_string(self, pretty=True):
+    def to_urdf_string(
+        self, file_protocols=True, paths_relative_to=None, pretty=True
+    ):
         """Get the URDF as a string.
 
         Parameters
@@ -516,6 +578,11 @@ class XacroDoc:
         : str
             The URDF represented as a string.
         """
+        dom = _copy_dom_change_paths(
+            self.doc,
+            file_protocols=file_protocols,
+            paths_relative_to=paths_relative_to,
+        )
         if pretty:
-            return self.doc.toprettyxml(indent="  ")
-        return self.doc.toxml()
+            return dom.toprettyxml(indent="  ")
+        return dom.toxml()
