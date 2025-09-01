@@ -56,12 +56,6 @@ def main(prog="xacrodoc", args=None):
         help="Make all asset file paths relative to the output file.",
     )
     parser.add_argument(
-        "-a",
-        "--absolute-paths",
-        action="store_true",
-        help="Make all asset file paths absolute.",
-    )
-    parser.add_argument(
         "-V", "--version", action="version", version=__version__
     )
     args, remainder = parser.parse_known_args(args)
@@ -81,7 +75,7 @@ def main(prog="xacrodoc", args=None):
             key, value = arg.split(":=", maxsplit=1)
         except ValueError:
             error(
-                f"Error: expected substitution argument of the form 'name:=value', but got '{arg}'"
+                f"Error: expected substitution argument of the form 'name:=value', but got '{arg}'."
             )
             sys.exit(1)
         subargs[key] = value
@@ -98,7 +92,7 @@ def main(prog="xacrodoc", args=None):
                 name, path = pkg_path.split(":=", maxsplit=1)
             except ValueError:
                 error(
-                    f"Error: expected package path mapping of the form 'name:=path', but got '{pkg_path}'"
+                    f"Error: expected package path mapping of the form 'name:=path', but got '{pkg_path}'."
                 )
                 sys.exit(1)
             pkg_cache[name] = path
@@ -118,58 +112,34 @@ def main(prog="xacrodoc", args=None):
         error(f"Error: {e}")
         sys.exit(1)
 
-    # when converting to MJCF, the following logic applies:
-    # * if --copy-assets-to is given, then all mesh paths are made relative to
-    #   that directory (strippath=true), and we make meshdir absolute if
-    #   --absolute-paths is given and relative otherwise
-    # * if --copy-assets-to is not given, then paths are made absolute
-    #   (strippath=false) if --absolute-paths is given and relative otherwise
-    # when converted to URDF, the logic is simpler because there is no meshdir
-    # TODO I actually think this is still wrong: strippath should not be true
-    # unless copy assets is; relative paths are independent of that
     mjcf_compiler_opts = {}
     if args.copy_assets_to is not None:
         doc.localize_assets(args.copy_assets_to)
-        print(f"Copied assets to '{args.copy_assets_to}'")
+        print(f"Copied assets to '{args.copy_assets_to}'.")
 
-        # when copying assets, we always want to strippath, and just change
-        # meshdir to absolute if --absolute-paths is given
+        # when copying assets, we always want to strippath, and we default to
+        # an absolute path to meshdir unless --relative-paths is given
         meshdir = os.path.abspath(args.copy_assets_to)
-        if not args.absolute_paths:
-            parent = Path(args.output).parent if args.output is not None else Path.cwd()
+        if args.relative_paths:
+            parent = (
+                Path(args.output).parent
+                if args.output is not None
+                else Path.cwd()
+            )
             meshdir = os.path.relpath(meshdir, parent)
 
         mjcf_compiler_opts["meshdir"] = meshdir
         mjcf_compiler_opts["strippath"] = "true"
-    elif args.absolute_paths:
+    else:
         mjcf_compiler_opts["strippath"] = "false"
-    # else:
-    #     mjcf_compiler_opts["strippath"] = "true"
-
-        # if args.output is not None:
-        #     parent = Path(args.output).parent
-        #     meshdir = os.path.relpath(args.copy_assets_to, parent)
-        # else:
-        #     # TODO should the meshdir be absolute as well?
-        #     meshdir = args.copy_assets_to
-        # mjcf_compiler_opts["strippath"] = "true"
-        # mjcf_compiler_opts["meshdir"] = meshdir
-
-    # else:
-    #     mjcf_compiler_opts["strippath"] = "false"
-
-    # TODO if a copy location is given, then we should always strippath and
-    # just make the meshdir relative or absolute
-
-    # for MJCF, we default to relative paths unless --absolute-paths is given
-    # if args.absolute_paths:
-    #     mjcf_compiler_opts["strippath"] = "false"
-    # else:
-    #     mjcf_compiler_opts["strippath"] = "true"
 
     if args.output:
         if args.mjcf:
-            doc.to_mjcf_file(args.output, **mjcf_compiler_opts)
+            doc.to_mjcf_file(
+                args.output,
+                relative_paths=args.relative_paths,
+                **mjcf_compiler_opts,
+            )
         else:
             doc.to_urdf_file(
                 args.output,
@@ -177,9 +147,12 @@ def main(prog="xacrodoc", args=None):
                 relative_paths=args.relative_paths,
             )
     else:
+        paths_relative_to = Path.cwd() if args.relative_paths else None
         if args.mjcf:
-            s = doc.to_mjcf_string(**mjcf_compiler_opts)
+            s = doc.to_mjcf_string(
+                paths_relative_to=paths_relative_to, **mjcf_compiler_opts
+            )
         else:
-            s = doc.to_urdf_string()
+            s = doc.to_urdf_string(paths_relative_to=paths_relative_to)
         print(s)
     sys.exit(0)

@@ -14,8 +14,8 @@ from .xacro.xacro.color import warning
 
 
 # monkey patch to replace xacro's package finding infrastructure
-# NOTE: we could include xacro as a regular dependency if it was up to date on
-# PyPI, but until it is we have to vendor the xacro code with this repo.
+# NOTE: we include a vendored version of xacro here to ensure we always have
+# compatibility even if the user has a different version of xacro installed
 substitution_args._eval_find = lambda pkg: packages.get_path(pkg)
 
 
@@ -387,7 +387,7 @@ class XacroDoc:
         for abspath, name in path_map.items():
             shutil.copyfile(abspath, asset_dir / name)
 
-    def _to_mjcf_spec(self, path, **kwargs):
+    def _to_mjcf_spec(self, path, paths_relative_to=None, **kwargs):
         """Convert a Mujoco spec relative to ``path``.
 
         All ``kwargs`` are used as Mujoco compiler options; see
@@ -395,7 +395,9 @@ class XacroDoc:
         """
         import mujoco
 
-        dom = _copy_dom_change_paths(self.doc, file_protocols=False)
+        dom = _copy_dom_change_paths(
+            self.doc, file_protocols=False, paths_relative_to=paths_relative_to
+        )
 
         # set compile options
         _set_mjcf_compile_options(dom, **kwargs)
@@ -423,7 +425,7 @@ class XacroDoc:
         spec.compile()
         return spec
 
-    def to_mjcf_file(self, path, **kwargs):
+    def to_mjcf_file(self, path, relative_paths=True, **kwargs):
         """Convert and write to a Mujoco MJCF XML file.
 
         This requires the ``mujoco`` module to be installed and available for
@@ -438,7 +440,10 @@ class XacroDoc:
             The path to the MJCF XML file to be written.
         """
         path = Path(path)
-        spec = self._to_mjcf_spec(path, **kwargs)
+        paths_relative_to = path if relative_paths else None
+        spec = self._to_mjcf_spec(
+            path, paths_relative_to=paths_relative_to, **kwargs
+        )
         try:
             spec.to_file(path.as_posix())
         except AttributeError:
@@ -446,7 +451,7 @@ class XacroDoc:
             with open(path, "w") as f:
                 f.write(spec.to_xml())
 
-    def to_mjcf_string(self, **kwargs):
+    def to_mjcf_string(self, paths_relative_to=None, **kwargs):
         """Convert to a string in Mujoco MJCF XML format.
 
         This requires the ``mujoco`` module to be installed and available for
@@ -460,7 +465,9 @@ class XacroDoc:
         : str
             The string of XML.
         """
-        return self._to_mjcf_spec(".", **kwargs).to_xml()
+        return self._to_mjcf_spec(
+            ".", paths_relative_to=paths_relative_to, **kwargs
+        ).to_xml()
 
     def to_urdf_file(
         self,
