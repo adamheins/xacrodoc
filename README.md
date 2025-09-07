@@ -9,8 +9,8 @@ not.
 
 Compared to the regular xacro package, xacrodoc allows you to:
 
-* Convert xacro files to URDF or Mujoco MJCF files without a ROS installation
-  (this includes converting plain URDF to MJCF).
+* Conveniently convert xacro files to URDF or Mujoco MJCF files without a ROS
+  installation (this includes converting plain URDF to MJCF).
 * Programmatically compose multiple xacro files and apply substitution
   arguments to build a flexible URDF model directly in your code. This allows
   you to avoid the clutter of redundant compiled raw URDFs and only keep the
