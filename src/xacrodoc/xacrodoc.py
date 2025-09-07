@@ -54,15 +54,15 @@ def _compile_xacro_file(text, subargs=None, max_runs=10):
     if subargs is None:
         subargs = {}
 
-    doc = xacro.parse(text)
-    s1 = doc.toxml()
+    dom = xacro.parse(text)
+    s1 = dom.toxml()
 
     # keep compiling until a fixed point is reached (i.e., the document doesn't
     # change anymore)
     run = 1
     while run < max_runs:
-        xacro.process_doc(doc, mappings=subargs)  # modifies doc in place
-        s2 = doc.toxml()
+        xacro.process_doc(dom, mappings=subargs)  # modifies dom in place
+        s2 = dom.toxml()
         if s1 == s2:
             break
         s1 = s2
@@ -71,15 +71,15 @@ def _compile_xacro_file(text, subargs=None, max_runs=10):
     if run >= max_runs:
         raise ValueError("URDF file did not converge.")
 
-    return doc
+    return dom
 
 
-def _urdf_elements_with_filenames(doc):
+def _urdf_elements_with_filenames(dom):
     """Get all elements in the URDF document with a filename attribute.
 
     Parameters
     ----------
-    doc : xml.dom.minidom.Document
+    dom : xml.dom.minidom.Document
         The XML document.
 
     Returns
@@ -87,22 +87,22 @@ def _urdf_elements_with_filenames(doc):
     : list
         List of elements which have a filename attribute.
     """
-    elements = doc.getElementsByTagName("mesh") + doc.getElementsByTagName(
+    elements = dom.getElementsByTagName("mesh") + dom.getElementsByTagName(
         "material"
     )
     return [e for e in elements if e.hasAttribute("filename")]
 
 
-def _resolve_packages(doc):
+def _resolve_packages(dom):
     """Convert all filenames specified with package:// to a full absolute path.
 
     Parameters
     ----------
-    doc : xml.dom.minidom.Document
+    dom : xml.dom.minidom.Document
         The XML document, which is modified in place.
     """
     pkg_regex = re.compile(r"package://([ \w-]+)/")
-    for e in _urdf_elements_with_filenames(doc):
+    for e in _urdf_elements_with_filenames(dom):
         filename = e.getAttribute("filename")
         if filename.startswith("package://"):
             pkg = pkg_regex.search(filename).group(1)
@@ -118,24 +118,7 @@ def _resolve_packages(doc):
         e.setAttribute("filename", filename)
 
 
-# def _remove_file_protocols(doc):
-#     """Remove file:// prefix from all asset filenames.
-#
-#     Parameters
-#     ----------
-#     doc : xml.dom.minidom.Document
-#         The XML document, which is modified in place.
-#     """
-#     prefix = "file://"
-#     prefix_len = len(prefix)
-#     for e in _urdf_elements_with_filenames(doc):
-#         filename = e.getAttribute("filename")
-#         if filename.startswith(prefix):
-#             filename = filename[prefix_len:]
-#             e.setAttribute("filename", filename)
-#
-#
-def _set_mjcf_compile_options(doc, **kwargs):
+def _set_mjcf_compile_options(dom, **kwargs):
     """Add or set compiler options in the mujoco extension.
 
     All ``kwargs`` are used as Mujoco compiler options; see
@@ -143,15 +126,15 @@ def _set_mjcf_compile_options(doc, **kwargs):
 
     Parameters
     ----------
-    doc : xml.dom.minidom.Document
+    dom : xml.dom.minidom.Document
         The XML document, which is modified in place.
     """
-    mujoco_nodes = doc.getElementsByTagName("mujoco")
+    mujoco_nodes = dom.getElementsByTagName("mujoco")
     if len(mujoco_nodes) > 1:
         raise ValueError("Multiple <mujoco> elements found.")
     if len(mujoco_nodes) == 0:
-        mujoco_node = doc.createElement("mujoco")
-        doc.documentElement.appendChild(mujoco_node)
+        mujoco_node = dom.createElement("mujoco")
+        dom.documentElement.appendChild(mujoco_node)
     else:
         mujoco_node = mujoco_nodes[0]
 
@@ -159,7 +142,7 @@ def _set_mjcf_compile_options(doc, **kwargs):
     if len(compiler_nodes) > 1:
         raise ValueError("Multiple <compiler> elements found.")
     if len(compiler_nodes) == 0:
-        compiler_node = doc.createElement("compiler")
+        compiler_node = dom.createElement("compiler")
         mujoco_node.appendChild(compiler_node)
     else:
         compiler_node = compiler_nodes[0]
@@ -202,8 +185,22 @@ def _make_name_unique(name, existing_names):
     raise ValueError(f"Failed to generate unique name for {name}.")
 
 
-def _split_path_protocol(path):
-    delim = "://"
+def _split_path_protocol(path, delim="://"):
+    """Split a path into its protocol prefix and the rest of the path.
+
+    Parameters
+    ----------
+    path : str
+        The path to split.
+    delim : str
+        The delimiter to split on.
+
+    Returns
+    -------
+    : tuple
+        A tuple of (protocol, path) where protocol is the protocol prefix
+        including the delimiter, or an empty string if there is no protocol.
+    """
     parts = path.split(delim, maxsplit=1)
     path = parts[-1]
     protocol = parts[0] + delim if len(parts) == 2 else ""
@@ -211,21 +208,71 @@ def _split_path_protocol(path):
 
 
 def _strip_path_protocol(path):
+    """Remove the protocol prefix from a path, if there is one.
+
+    Parameters
+    ----------
+    path : str
+        The path to strip the protocol from.
+
+    Returns
+    -------
+    : str
+        The path without the protocol prefix.
+    """
     return _split_path_protocol(path)[1]
 
 
 def _copy_dom(dom):
+    """Make a deep copy of a DOM tree.
+
+    Parameters
+    ----------
+    dom : xml.dom.minidom.Document
+        The XML document to copy.
+
+    Returns
+    -------
+    : xml.dom.minidom.Document
+        The copied XML document.
+    """
+    # NOTE: this is not quite as efficient as doing a deep clone of the node
+    # and copying it into a new document, but it is very simple
     return parseString(dom.toxml())
 
 
 def _copy_dom_change_paths(dom, file_protocols=True, paths_relative_to=None):
+    """Make a deep copy of the DOM tree with modified asset paths.
+
+    Parameters
+    ----------
+    dom : xml.dom.minidom.Document
+        The XML document to copy.
+    file_protocols : bool
+        If ``True``, all asset filenames will be prefixed with ``file://``.
+        Otherwise, no protocol prefix is used.
+    paths_relative_to : str or Path or None
+        If not ``None``, all asset filenames will be made relative to this
+        path. Otherwise, absolute paths are used. Note that some applications
+        may not support relative paths.
+
+    Returns
+    -------
+    : xml.dom.minidom.Document
+        The copied XML document with modified asset paths.
+    """
     dom = _copy_dom(dom)
     for e in _urdf_elements_with_filenames(dom):
         path = e.getAttribute("filename")
         path = _strip_path_protocol(path)
 
         if paths_relative_to is not None:
-            path = os.path.relpath(path, start=paths_relative_to)
+            start = Path(paths_relative_to)
+
+            # we always want to be relative to a directory
+            if start.is_file():
+                start = start.parent
+            path = os.path.relpath(path, start=start)
 
         prefix = ""
         if file_protocols:
@@ -256,7 +303,7 @@ class XacroDoc:
 
     Attributes
     ----------
-    doc :
+    dom :
         The underlying XML document.
     """
 
@@ -268,32 +315,48 @@ class XacroDoc:
         resolve_packages=True,
     ):
         warnings.warn(
-            "Calling XacroDoc's `__init__` directly is deprecated and its behaviour will change in a future release. Please use the `from_string` method instead.",
+            "Calling XacroDoc's `__init__` directly is deprecated and its behaviour will change in xacrodoc version 2.0. Please use the `from_string` method instead.",
             DeprecationWarning,
         )
-        self.doc = _compile_xacro_file(
+        self.dom = _compile_xacro_file(
             text=text,
             subargs=subargs,
             max_runs=max_runs,
         )
         if resolve_packages:
-            _resolve_packages(self.doc)
+            _resolve_packages(self.dom)
+
+    @property
+    def doc(self):
+        warnings.warn(
+            "The attribute ``doc`` is deprecated and will be removed in xacrodoc version 2.0. Please use the attribute ``dom`` instead.",
+            DeprecationWarning,
+        )
+        return self.dom
+
+    @doc.setter
+    def doc(self, value):
+        warnings.warn(
+            "The attribute ``doc`` is deprecated and will be removed in xacrodoc version 2.0. Please use the attribute ``dom`` instead.",
+            DeprecationWarning,
+        )
+        self.dom = value
 
     @classmethod
     def from_string(
         cls, text, subargs=None, max_runs=10, resolve_packages=True
     ):
-        doc = _compile_xacro_file(
+        dom = _compile_xacro_file(
             text=text,
             subargs=subargs,
             max_runs=max_runs,
         )
         if resolve_packages:
-            _resolve_packages(doc)
+            _resolve_packages(dom)
 
         # TODO: until we change __init__
         obj = cls.__new__(cls)
-        obj.doc = doc
+        obj.dom = dom
         return obj
 
     @classmethod
@@ -348,6 +411,25 @@ class XacroDoc:
         s += "</robot>"
         return cls.from_string(s, **kwargs)
 
+    def _elements_with_filenames(self):
+        """Returns a list of all elements that have filename attributes."""
+        return _urdf_elements_with_filenames(self.dom)
+
+    def count_assets(self):
+        """Count the number of unique asset files referenced in the document.
+
+        Returns
+        -------
+        : int
+            The number of unique asset files.
+        """
+        paths = set()
+        for e in self._elements_with_filenames():
+            path = e.getAttribute("filename")
+            path = _strip_path_protocol(path)
+            paths.add(path)
+        return len(paths)
+
     def localize_assets(self, asset_dir):
         """Copy all assets to a local directory and update all filenames in the
         document accordingly.
@@ -368,12 +450,12 @@ class XacroDoc:
         asset_dir = Path(asset_dir)
         asset_dir.mkdir(exist_ok=True)
 
-        for e in _urdf_elements_with_filenames(self.doc):
+        for e in self._elements_with_filenames():
             path = e.getAttribute("filename")
             protocol, path = _split_path_protocol(path)
 
             if path in path_map:
-                basename = path_map[abspath]
+                basename = path_map[path]
             else:
                 basename = _make_name_unique(Path(path).name, basenames)
                 basenames.add(basename)
@@ -387,7 +469,7 @@ class XacroDoc:
         for abspath, name in path_map.items():
             shutil.copyfile(abspath, asset_dir / name)
 
-    def _to_mjcf_spec(self, path, paths_relative_to=None, **kwargs):
+    def _to_mjcf_spec(self, path, **kwargs):
         """Convert a Mujoco spec relative to ``path``.
 
         All ``kwargs`` are used as Mujoco compiler options; see
@@ -395,9 +477,7 @@ class XacroDoc:
         """
         import mujoco
 
-        dom = _copy_dom_change_paths(
-            self.doc, file_protocols=False, paths_relative_to=paths_relative_to
-        )
+        dom = _copy_dom_change_paths(self.dom, file_protocols=False)
 
         # set compile options
         _set_mjcf_compile_options(dom, **kwargs)
@@ -425,7 +505,7 @@ class XacroDoc:
         spec.compile()
         return spec
 
-    def to_mjcf_file(self, path, relative_paths=True, **kwargs):
+    def to_mjcf_file(self, path, **kwargs):
         """Convert and write to a Mujoco MJCF XML file.
 
         This requires the ``mujoco`` module to be installed and available for
@@ -440,10 +520,7 @@ class XacroDoc:
             The path to the MJCF XML file to be written.
         """
         path = Path(path)
-        paths_relative_to = path if relative_paths else None
-        spec = self._to_mjcf_spec(
-            path, paths_relative_to=paths_relative_to, **kwargs
-        )
+        spec = self._to_mjcf_spec(path, **kwargs)
         try:
             spec.to_file(path.as_posix())
         except AttributeError:
@@ -451,7 +528,7 @@ class XacroDoc:
             with open(path, "w") as f:
                 f.write(spec.to_xml())
 
-    def to_mjcf_string(self, paths_relative_to=None, **kwargs):
+    def to_mjcf_string(self, **kwargs):
         """Convert to a string in Mujoco MJCF XML format.
 
         This requires the ``mujoco`` module to be installed and available for
@@ -465,9 +542,7 @@ class XacroDoc:
         : str
             The string of XML.
         """
-        return self._to_mjcf_spec(
-            ".", paths_relative_to=paths_relative_to, **kwargs
-        ).to_xml()
+        return self._to_mjcf_spec(".", **kwargs).to_xml()
 
     def to_urdf_file(
         self,
@@ -488,6 +563,9 @@ class XacroDoc:
             and only write back to it if the parsed URDF is different than the
             file content. This avoids some race conditions if the file is being
             compiled by multiple processes concurrently.
+        file_protocols : bool
+            If ``True``, all asset filenames will be prefixed with ``file://``.
+            Otherwise, no protocol prefix is used.
         relative_paths : bool
             If ``True``, convert all asset filenames to be relative to the
             specified output ``path``. Otherwise, absolute paths are used. Note
@@ -577,6 +655,16 @@ class XacroDoc:
 
         Parameters
         ----------
+        file_protocols : bool
+            If ``True``, all asset filenames will be prefixed with ``file://``.
+            Otherwise, no protocol prefix is used.
+        file_protocols : bool
+            If ``True``, all asset filenames will be prefixed with ``file://``.
+            Otherwise, no protocol prefix is used.
+        paths_relative_to : str or Path or None
+            If not ``None``, all asset filenames will be made relative to this
+            path. Otherwise, absolute paths are used. Note that some applications
+            may not support relative paths.
         pretty : bool
             True to format the string for human readability, False otherwise.
 
@@ -586,7 +674,7 @@ class XacroDoc:
             The URDF represented as a string.
         """
         dom = _copy_dom_change_paths(
-            self.doc,
+            self.dom,
             file_protocols=file_protocols,
             paths_relative_to=paths_relative_to,
         )

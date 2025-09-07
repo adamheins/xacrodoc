@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+import re
 import tempfile
 
 import pytest
@@ -142,7 +143,7 @@ def test_resolve_packages():
 
     expected = "file://" + Path("files/assets/base.stl").absolute().as_posix()
     doc = XacroDoc.from_file("files/xacro/mesh_different_packages.urdf.xacro")
-    for element in doc.doc.getElementsByTagName("mesh"):
+    for element in doc.dom.getElementsByTagName("mesh"):
         filename = element.getAttribute("filename")
         assert filename == expected
 
@@ -176,3 +177,54 @@ def test_localize_assets():
         assert len(files) == 2
         assert "base.stl" in files
         assert "base_001.stl" in files
+
+
+def test_relative_paths():
+    doc = XacroDoc.from_file("files/xacro/mesh.urdf.xacro")
+    meshpath = Path("files/assets/base.stl")
+
+    # relative to this test's directory
+    # getting rid of file:// just makes parsing easier
+    s = doc.to_urdf_string(paths_relative_to=__file__, file_protocols=False)
+    matches = re.findall(r'filename="(.+)"', s)
+    assert len(matches) == 1
+    assert matches[0] == meshpath.as_posix()
+
+    # absolute paths
+    s = doc.to_urdf_string(file_protocols=False)
+    matches = re.findall(r'filename="(.+)"', s)
+    assert len(matches) == 1
+    assert matches[0] == meshpath.absolute().as_posix()
+
+
+def test_file_protocols():
+    doc = XacroDoc.from_file("files/xacro/mesh2.urdf.xacro")
+
+    # with file protocols
+    s = doc.to_urdf_string(file_protocols=True)
+    matches = re.findall(r'filename="(.+)"', s)
+    assert len(matches) == 2
+    for match in matches:
+        assert match.startswith("file://")
+
+    # without file protocols
+    s = doc.to_urdf_string(file_protocols=False)
+    matches = re.findall(r'filename="(.+)"', s)
+    assert len(matches) == 2
+    for match in matches:
+        assert not match.startswith("file://")
+
+def test_count_assets():
+    doc = XacroDoc.from_file("files/xacro/mesh2.urdf.xacro")
+    assert doc.count_assets() == 2
+
+    # after resolving packages, the assets are point to the same file
+    packages.update_package_cache(
+        {
+            "xacrodoc": "..",
+            "fake-package": "..",
+            "another_fake_package": "..",
+        }
+    )
+    doc = XacroDoc.from_file("files/xacro/mesh_different_packages.urdf.xacro")
+    assert doc.count_assets() == 1

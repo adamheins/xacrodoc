@@ -1,4 +1,5 @@
 import os
+import re
 import tempfile
 
 import pytest
@@ -126,6 +127,12 @@ def test_mjcf(capsys):
     except ModuleNotFoundError:
         pytest.skip("mujoco could not be imported")
 
+    # this will complain because we need -c when there are assets
     with pytest.raises(SystemExit) as e:
         xacrodoc.cli.main(args=["files/xacro/mesh2.urdf.xacro", "--mjcf"])
+    assert e.value.code == 1
+
+    # this URDF has no assets, so we don't need -c
+    with pytest.raises(SystemExit) as e:
+        xacrodoc.cli.main(args=["files/xacro/threelink.urdf.xacro", "--mjcf"])
     assert e.value.code == 0

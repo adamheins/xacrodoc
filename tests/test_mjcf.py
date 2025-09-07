@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+import re
 import tempfile
 
 import pytest
@@ -39,7 +40,7 @@ def test_mjcf():
         doc.to_mjcf_file(path, meshdir="assets", strippath="true")
 
 
-def test_mjcf_existing_mujoco_ext():
+def test_mjcf_existing_mujoco_extension():
     with open("files/mjcf/threelink.xml") as f:
         expected = f.read()
 

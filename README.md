@@ -7,12 +7,14 @@ not.
 
 ## Why?
 
-* Compile xacro files to URDF or Mujoco MJCF files without a ROS installation
+Compared to the regular xacro package, xacrodoc allows you to:
+
+* Convert xacro files to URDF or Mujoco MJCF files without a ROS installation
   (this includes converting plain URDF to MJCF).
-* Avoid the clutter of redundant compiled raw URDFs; only keep the xacro
-  source files.
 * Programmatically compose multiple xacro files and apply substitution
-  arguments to build a flexible URDF model directly in your code.
+  arguments to build a flexible URDF model directly in your code. This allows
+  you to avoid the clutter of redundant compiled raw URDFs and only keep the
+  xacro source files.
 * Convenient interfaces to provide URDF strings and (temporary) URDF file paths
   as needed. For example, many libraries (such as
   [Pinocchio](https://github.com/stack-of-tasks/pinocchio)) accept a URDF
@@ -21,7 +23,9 @@ not.
 
 ## Documentation
 
-See the documentation [here](https://xacrodoc.readthedocs.io/en/latest/).
+Usage information and examples are provided in this README. The package's
+function reference can be found
+[here](https://xacrodoc.readthedocs.io/en/latest/).
 
 ## Installation
 
@@ -240,8 +244,16 @@ xacrodoc input.urdf.xacro -p my_pkg:=~/path/to/my_pkg -p other_pkg:=/home/foo/pa
 # substitution arguments also use := notation, like xacro
 xacrodoc input.urdf.xacro mass:=1
 
+# you can also remove file:// protocols prefixed to asset paths with -s or
+# convert paths from absolute to relative using -r
+xacrodoc input.urdf.xacro -sr output.urdf
+
 # convert to MJCF (requires Mujoco)
-xacrodoc input.urdf.xacro --mjcf -o output.xml
+# the -c (or --copy-assets-to) option with a directory name is required when
+# converting to MJCF; it copies all assets to that directory and updates their
+# file paths (it is optional when converting to URDF)
+# relative file paths are always used when converting to MJCF
+xacrodoc input.urdf.xacro --mjcf -c assets -o output.xml
 ```
 
 ## Development
