@@ -129,6 +129,11 @@ def main(prog="xacrodoc", args=None):
             warning(
                 "Warning: --relative-paths has no effect when exporting to MJCF."
             )
+        if args.strip_protocols:
+            warning(
+                "Warning: --strip-protocols has no effect when exporting to MJCF."
+            )
+
 
     mjcf_compiler_opts = {}
     if args.copy_assets_to is not None:
