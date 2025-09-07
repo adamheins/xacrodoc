@@ -15,16 +15,18 @@ Compared to the regular xacro package, xacrodoc allows you to:
   arguments to build a flexible URDF model directly in your code. This allows
   you to avoid the clutter of redundant compiled raw URDFs and only keep the
   xacro source files.
-* Convenient interfaces to provide URDF strings and (temporary) URDF file paths
+* Seamlessly obtain URDF strings and (temporary) URDF file paths
   as needed. For example, many libraries (such as
   [Pinocchio](https://github.com/stack-of-tasks/pinocchio)) accept a URDF
   string to build a model, but others (like [PyBullet](https://pybullet.org))
   only load URDFs directly from file paths.
+* Easily copy assets like meshes to a single directory and have fine-grained
+  control over file protocols and absolute vs. relative paths, if desired.
 
 ## Documentation
 
 Usage information and examples are provided in this README. The package's
-function reference can be found
+full function reference can be found
 [here](https://xacrodoc.readthedocs.io/en/latest/).
 
 ## Installation
@@ -249,9 +251,9 @@ xacrodoc input.urdf.xacro mass:=1
 xacrodoc input.urdf.xacro -sr output.urdf
 
 # convert to MJCF (requires Mujoco)
-# the -c (or --copy-assets-to) option with a directory name is required when
+# the `-c` (short for `--copy-assets-to`) option with a directory name is required when
 # converting to MJCF; it copies all assets to that directory and updates their
-# file paths (it is optional when converting to URDF)
+# file paths (`-c` is optional when converting to URDF)
 # relative file paths are always used when converting to MJCF
 xacrodoc input.urdf.xacro --mjcf -c assets -o output.xml
 ```
