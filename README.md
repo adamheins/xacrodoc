@@ -224,8 +224,9 @@ MJCF conversion is also available in the command line tool (see below).
 ## Command Line Usage
 
 In addition to the Python API described above, this packages also includes a
-`xacrodoc` command line tool. It is similar to `xacro`, except that directories
-in which to search for packages can be provided manually. Examples:
+`xacrodoc` command line tool. It is similar to `xacro` but provides additional
+options; notably, directories in which to search for packages can be provided
+manually. Examples:
 ```sh
 # compile and print to stdout
 xacrodoc input.urdf.xacro
@@ -248,12 +249,12 @@ xacrodoc input.urdf.xacro mass:=1
 
 # you can also remove file:// protocols prefixed to asset paths with -s or
 # convert paths from absolute to relative using -r
-xacrodoc input.urdf.xacro -sr output.urdf
+xacrodoc input.urdf.xacro -s -r output.urdf
 
 # convert to MJCF (requires Mujoco)
-# the `-c` (short for `--copy-assets-to`) option with a directory name is required when
-# converting to MJCF; it copies all assets to that directory and updates their
-# file paths (`-c` is optional when converting to URDF)
+# the -c (short for --copy-assets-to) option with a directory name is required
+# when converting to MJCF; it copies all assets to that directory and updates
+# their file paths (-c is optional when converting to URDF)
 # relative file paths are always used when converting to MJCF
 xacrodoc input.urdf.xacro --mjcf -c assets -o output.xml
 ```
