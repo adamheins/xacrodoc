@@ -5,7 +5,8 @@ import rospkg
 
 class PackageNotFoundError(Exception):
     """Raised when a package could not be found."""
-    pass
+    def __str__(self):
+        return f"Package not found: {' '.join(self.args)}"
 
 
 class PackageFinder:

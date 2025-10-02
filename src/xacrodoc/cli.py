@@ -107,15 +107,18 @@ def main(prog="xacrodoc", args=None):
     # convert file with error handling
     try:
         doc = XacroDoc.from_file(args.xacro_file, subargs=subargs)
-    except PackageNotFoundError as e:
-        error(f"Error: package not found: {e}")
-        print(
-            "You can specify additional package locations with --pkg-dir or --pkg-path."
-        )
-        print("See --help for more details.")
-        sys.exit(1)
     except Exception as e:
+        # unwrap XacroException if underlying exception is
+        # PackageNotFoundError, so we can handle it specially
+        if type(e) == XacroException and type(e.exc) == PackageNotFoundError:
+            e = e.exc
+
         error(f"Error: {e}")
+        if type(e) == PackageNotFoundError:
+            print(
+                "You can specify additional package locations with --pkg-dir or --pkg-path."
+            )
+            print("See --help for more details.")
         sys.exit(1)
 
     num_assets = doc.count_assets()
