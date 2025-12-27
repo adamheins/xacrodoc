@@ -485,12 +485,15 @@ class XacroDoc:
         # we need to create a temporary URDF file (rather than just work with
         # the XML string) because mujoco will use paths to assets relative to
         # the URDF file when strippath="false"
+        # note that we use the .xml suffix rather than .urdf because mujoco may
+        # not recognize the latter properly
         path = Path(path)
         with tempfile.NamedTemporaryFile(
-            suffix=".urdf", dir=path.parent, mode="w", delete=False
+            suffix=".xml", dir=path.parent, mode="w", delete=False
         ) as f:
             # write the URDF
-            f.write(dom.toxml())
+            # f.write(dom.toxml())
+            f.write(dom.toprettyxml(indent="  "))
             f.close()
 
             # convert the URDF to MJCF
