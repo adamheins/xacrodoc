@@ -492,8 +492,7 @@ class XacroDoc:
             suffix=".xml", dir=path.parent, mode="w", delete=False
         ) as f:
             # write the URDF
-            # f.write(dom.toxml())
-            f.write(dom.toprettyxml(indent="  "))
+            f.write(dom.toxml())
             f.close()
 
             # convert the URDF to MJCF
