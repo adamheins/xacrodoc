@@ -54,3 +54,13 @@ def test_to_mjcf_file():
     with tempfile.TemporaryDirectory() as tmp:
         path = Path(tmp) / "threelink.xml"
         doc.to_mjcf_file(path)
+
+
+def test_rootdir():
+    doc = XacroDoc.from_file("files/xacro/mesh_rel_path.urdf.xacro")
+
+    # the mesh file is specified with a relative path to the URDF file
+    # ensure that it resolves correctly
+    s = doc.to_mjcf_string(strippath="false")
+    matches = re.findall(r'file="(.+)"', s)
+    assert Path(matches[0]).exists()

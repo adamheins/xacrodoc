@@ -107,7 +107,7 @@ def _resolve_packages(dom):
         if filename.startswith("package://"):
             pkg = pkg_regex.search(filename).group(1)
 
-            # ROS doesn't support spaces in package names, and neither do we
+            # ROS doesn't support spaces in package names, so neither do we;
             # explicitly check and tell the user about this
             if " " in pkg:
                 raise ValueError(
@@ -115,7 +115,7 @@ def _resolve_packages(dom):
                 )
             abspath = Path(packages.get_path(pkg)).absolute().as_posix()
             filename = re.sub(f"package://{pkg}", f"file://{abspath}", filename)
-        e.setAttribute("filename", filename)
+            e.setAttribute("filename", filename)
 
 
 def _set_mjcf_compile_options(dom, **kwargs):
@@ -241,7 +241,9 @@ def _copy_dom(dom):
     return parseString(dom.toxml())
 
 
-def _copy_dom_change_paths(dom, file_protocols=True, paths_relative_to=None):
+def _copy_dom_change_paths(
+    dom, file_protocols=True, paths_relative_to=None, rootdir=None
+):
     """Make a deep copy of the DOM tree with modified asset paths.
 
     Parameters
@@ -253,8 +255,13 @@ def _copy_dom_change_paths(dom, file_protocols=True, paths_relative_to=None):
         Otherwise, no protocol prefix is used.
     paths_relative_to : str or Path or None
         If not ``None``, all asset filenames will be made relative to this
-        path. Otherwise, absolute paths are used. Note that some applications
-        may not support relative paths.
+        path. Otherwise, paths are changed according to the value of
+        ``rootdir`` (see below). Note that some applications may not support
+        relative paths.
+    rootdir : str or Path or None
+        If ``paths_relative_to`` is ``None`` but ``rootdir`` is not, make all
+        asset filenames absolute by resolving relative paths relative to
+        ``rootdir``. If the filename is already absolute, it is left unchanged.
 
     Returns
     -------
@@ -265,6 +272,7 @@ def _copy_dom_change_paths(dom, file_protocols=True, paths_relative_to=None):
     for e in _urdf_elements_with_filenames(dom):
         path = e.getAttribute("filename")
         path = _strip_path_protocol(path)
+        path = Path(path)
 
         if paths_relative_to is not None:
             start = Path(paths_relative_to)
@@ -273,6 +281,10 @@ def _copy_dom_change_paths(dom, file_protocols=True, paths_relative_to=None):
             if start.is_file():
                 start = start.parent
             path = os.path.relpath(path, start=start)
+        elif rootdir is not None:
+            # if the path is not absolute, resolve it relative to rootdir
+            if not path.is_absolute():
+                path = (Path(rootdir) / path).resolve()
 
         prefix = ""
         if file_protocols:
@@ -344,7 +356,12 @@ class XacroDoc:
 
     @classmethod
     def from_string(
-        cls, text, subargs=None, max_runs=10, resolve_packages=True
+        cls,
+        text,
+        subargs=None,
+        max_runs=10,
+        resolve_packages=True,
+        rootdir=None,
     ):
         dom = _compile_xacro_file(
             text=text,
@@ -357,11 +374,12 @@ class XacroDoc:
         # TODO: until we change __init__
         obj = cls.__new__(cls)
         obj.dom = dom
+        obj.rootdir = rootdir
         return obj
 
     @classmethod
     def from_file(cls, path, walk_up=True, **kwargs):
-        """Load the URDF document from a xacro file.
+        """Load the URDF document from a xacro or plain URDF file.
 
         Parameters
         ----------
@@ -376,7 +394,8 @@ class XacroDoc:
 
         with open(path) as f:
             text = f.read()
-        return cls.from_string(text, **kwargs)
+        rootdir = Path(path).parent
+        return cls.from_string(text, rootdir=rootdir, **kwargs)
 
     @classmethod
     def from_package_file(cls, package_name, relative_path, **kwargs):
@@ -403,7 +422,7 @@ class XacroDoc:
             empty, xacro file. Any string that can be used in a xacro include
             directive is valid, so look-ups like ``$(find package)`` are valid.
         name : str
-            The name of the top-level robot tag.
+            The name attribute of the top-level robot tag.
         """
         s = _xacro_header(name)
         for incl in includes:
@@ -430,7 +449,7 @@ class XacroDoc:
             paths.add(path)
         return len(paths)
 
-    def localize_assets(self, asset_dir):
+    def localize_assets(self, asset_dir, exist_ok=True):
         """Copy all assets to a local directory and update all filenames in the
         document accordingly.
 
@@ -448,7 +467,7 @@ class XacroDoc:
 
         # make the destination directory
         asset_dir = Path(asset_dir)
-        asset_dir.mkdir(exist_ok=True)
+        asset_dir.mkdir(exist_ok=exist_ok)
 
         for e in self._elements_with_filenames():
             path = e.getAttribute("filename")
@@ -477,7 +496,9 @@ class XacroDoc:
         """
         import mujoco
 
-        dom = _copy_dom_change_paths(self.dom, file_protocols=False)
+        dom = _copy_dom_change_paths(
+            self.dom, file_protocols=False, rootdir=self.rootdir
+        )
 
         # set compile options
         _set_mjcf_compile_options(dom, **kwargs)
@@ -485,8 +506,8 @@ class XacroDoc:
         # we need to create a temporary URDF file (rather than just work with
         # the XML string) because mujoco will use paths to assets relative to
         # the URDF file when strippath="false"
-        # note that we use the .xml suffix rather than .urdf because mujoco may
-        # not recognize the latter properly
+        # NOTE we use the .xml suffix rather than .urdf because mujoco may not
+        # recognize the latter properly
         path = Path(path)
         with tempfile.NamedTemporaryFile(
             suffix=".xml", dir=path.parent, mode="w", delete=False
@@ -679,6 +700,7 @@ class XacroDoc:
             self.dom,
             file_protocols=file_protocols,
             paths_relative_to=paths_relative_to,
+            rootdir=self.rootdir,
         )
         if pretty:
             return dom.toprettyxml(indent="  ")

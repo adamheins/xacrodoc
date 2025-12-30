@@ -8,6 +8,9 @@ import pytest
 from xacrodoc import XacroDoc, packages
 
 
+FILENAME_REGEX = re.compile(r'filename="(.+)"')
+
+
 def setup_function():
     # make sure we are working in the `tests` directory
     dir = os.path.dirname(os.path.realpath(__file__))
@@ -186,13 +189,13 @@ def test_relative_paths():
     # relative to this test's directory
     # getting rid of file:// just makes parsing easier
     s = doc.to_urdf_string(paths_relative_to=__file__, file_protocols=False)
-    matches = re.findall(r'filename="(.+)"', s)
+    matches = FILENAME_REGEX.findall(s)
     assert len(matches) == 1
     assert matches[0] == meshpath.as_posix()
 
     # absolute paths
     s = doc.to_urdf_string(file_protocols=False)
-    matches = re.findall(r'filename="(.+)"', s)
+    matches = FILENAME_REGEX.findall(s)
     assert len(matches) == 1
     assert matches[0] == meshpath.absolute().as_posix()
 
@@ -202,17 +205,18 @@ def test_file_protocols():
 
     # with file protocols
     s = doc.to_urdf_string(file_protocols=True)
-    matches = re.findall(r'filename="(.+)"', s)
+    matches = FILENAME_REGEX.findall(s)
     assert len(matches) == 2
     for match in matches:
         assert match.startswith("file://")
 
     # without file protocols
     s = doc.to_urdf_string(file_protocols=False)
-    matches = re.findall(r'filename="(.+)"', s)
+    matches = FILENAME_REGEX.findall(s)
     assert len(matches) == 2
     for match in matches:
         assert not match.startswith("file://")
+
 
 def test_count_assets():
     doc = XacroDoc.from_file("files/xacro/mesh2.urdf.xacro")
@@ -228,3 +232,13 @@ def test_count_assets():
     )
     doc = XacroDoc.from_file("files/xacro/mesh_different_packages.urdf.xacro")
     assert doc.count_assets() == 1
+
+
+def test_rootdir():
+    doc = XacroDoc.from_file("files/xacro/mesh_rel_path.urdf.xacro")
+
+    # the mesh file is specified with a relative path to the URDF file
+    # ensure that it resolves correctly
+    s = doc.to_urdf_string(file_protocols=False)
+    matches = FILENAME_REGEX.findall(s)
+    assert Path(matches[0]).exists()
