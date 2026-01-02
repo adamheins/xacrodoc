@@ -26,7 +26,7 @@ Compared to the regular xacro package, xacrodoc allows you to:
 ## Documentation
 
 Usage information and examples are provided in this README. The package's
-full function reference can be found
+full API reference can be found
 [here](https://xacrodoc.readthedocs.io/en/latest/).
 
 ## Installation
@@ -223,7 +223,7 @@ MJCF conversion is also available in the command line tool (see below).
 
 ## Command Line Usage
 
-In addition to the Python API described above, this packages also includes a
+In addition to the Python API described above, this package also includes a
 `xacrodoc` command line tool. It is similar to `xacro` but provides additional
 options; notably, directories in which to search for packages can be provided
 manually. Examples:
@@ -286,7 +286,7 @@ Docs are built with `sphinx`. In the `docs` directory, run
 ```
 make html
 ```
-and the open `build/html/index.html`.
+and then open `build/html/index.html`.
 
 ## License
 
