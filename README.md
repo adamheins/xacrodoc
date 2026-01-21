@@ -35,6 +35,25 @@ xacrodoc requires at least Python 3.8. Note that ROS *does not* need to be
 installed on the system, but xacrodoc will also use its infrastructure to look
 for packages if it is available.
 
+### Command Line Tool
+
+It is recommended to install the command line tool into an isolated environment
+using [uv](https://docs.astral.sh/uv/):
+```sh
+uv tool install xacrodoc
+
+# for conversion to MJCF files, use:
+uv tool install "xacrodoc[mujoco]"
+```
+or [pipx](https://pipx.pypa.io):
+```sh
+pipx install xacrodoc
+# or
+pipx install "xacrodoc[mujoco]"
+```
+
+### Python Library
+
 The library can be installed from pip:
 ```sh
 pip install xacrodoc
@@ -49,22 +68,45 @@ cd xacrodoc
 pip install .
 ```
 
-It is recommended to install the command line tool into an isolated environment
-using [uv](https://docs.astral.sh/uv/):
-```
-uv tool install xacrodoc
+## Command Line Usage
 
-# for conversion to MJCF files, use:
-uv tool install "xacrodoc[mujoco]"
-```
-or [pipx](https://pipx.pypa.io):
-```
-pipx install xacrodoc
-# or
-pipx install "xacrodoc[mujoco]"
+In addition to the Python API described below, this package also includes a
+`xacrodoc` command line tool. It is similar to `xacro` but provides additional
+options; notably, directories in which to search for packages can be provided
+manually. Examples:
+```sh
+# compile and print to stdout
+xacrodoc input.urdf.xacro
+
+# compile and output to provided output file
+xacrodoc input.urdf.xacro -o output.urdf
+
+# provide directories in which to look for packages referenced in
+# input.urdf.xacro (-d flag is needed before each one to disambiguate from
+# substitution arguments); a common usecase would be providing the path to
+# catkin workspaces
+xacrodoc input.urdf.xacro -d ~/my_pkg_dir -d ~/my_other_pkg_dir
+
+# alternatively, package name/path mappings can be directly supplied using the
+# -p flag; := is used to separate the name and path:
+xacrodoc input.urdf.xacro -p my_pkg:=~/path/to/my_pkg -p other_pkg:=/home/foo/packages/other_pkg
+
+# substitution arguments also use := notation, like xacro
+xacrodoc input.urdf.xacro mass:=1
+
+# you can also remove file:// protocols prefixed to asset paths with -s or
+# convert paths from absolute to relative using -r
+xacrodoc input.urdf.xacro -s -r output.urdf
+
+# convert to MJCF (requires Mujoco)
+# the -c (short for --copy-assets-to) option with a directory name is required
+# when converting to MJCF; it copies all assets to that directory and updates
+# their file paths (-c is optional when converting to URDF)
+# relative file paths are always used when converting to MJCF
+xacrodoc input.urdf.xacro --mjcf -c assets -o output.xml
 ```
 
-## Python Usage
+## Python Library Usage
 
 ### Basic
 
@@ -220,44 +262,6 @@ to the Mujoco URDF compiler
 [extension](https://mujoco.readthedocs.io/en/stable/modeling.html#curdf).
 
 MJCF conversion is also available in the command line tool (see below).
-
-## Command Line Usage
-
-In addition to the Python API described above, this package also includes a
-`xacrodoc` command line tool. It is similar to `xacro` but provides additional
-options; notably, directories in which to search for packages can be provided
-manually. Examples:
-```sh
-# compile and print to stdout
-xacrodoc input.urdf.xacro
-
-# compile and output to provided output file
-xacrodoc input.urdf.xacro -o output.urdf
-
-# provide directories in which to look for packages referenced in
-# input.urdf.xacro (-d flag is needed before each one to disambiguate from
-# substitution arguments); a common usecase would be providing the path to
-# catkin workspaces
-xacrodoc input.urdf.xacro -d ~/my_pkg_dir -d ~/my_other_pkg_dir
-
-# alternatively, package name/path mappings can be directly supplied using the
-# -p flag; := is used to separate the name and path:
-xacrodoc input.urdf.xacro -p my_pkg:=~/path/to/my_pkg -p other_pkg:=/home/foo/packages/other_pkg
-
-# substitution arguments also use := notation, like xacro
-xacrodoc input.urdf.xacro mass:=1
-
-# you can also remove file:// protocols prefixed to asset paths with -s or
-# convert paths from absolute to relative using -r
-xacrodoc input.urdf.xacro -s -r output.urdf
-
-# convert to MJCF (requires Mujoco)
-# the -c (short for --copy-assets-to) option with a directory name is required
-# when converting to MJCF; it copies all assets to that directory and updates
-# their file paths (-c is optional when converting to URDF)
-# relative file paths are always used when converting to MJCF
-xacrodoc input.urdf.xacro --mjcf -c assets -o output.xml
-```
 
 ## Development
 
