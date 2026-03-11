@@ -169,7 +169,7 @@ def main(prog="xacrodoc", args=None):
                 args.output,
                 compare_existing=False,
                 relative_paths=args.relative_paths,
-                file_protocols=not args.strip_protocols,
+                use_protocols=not args.strip_protocols,
             )
     else:
         if args.mjcf:
@@ -178,7 +178,7 @@ def main(prog="xacrodoc", args=None):
             paths_relative_to = Path.cwd() if args.relative_paths else None
             s = doc.to_urdf_string(
                 paths_relative_to=paths_relative_to,
-                file_protocols=not args.strip_protocols,
+                use_protocols=not args.strip_protocols,
             )
         print(s)
     sys.exit(0)

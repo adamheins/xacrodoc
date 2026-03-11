@@ -207,22 +207,6 @@ def _split_path_protocol(path, delim="://"):
     return protocol, path
 
 
-def _strip_path_protocol(path):
-    """Remove the protocol prefix from a path, if there is one.
-
-    Parameters
-    ----------
-    path : str
-        The path to strip the protocol from.
-
-    Returns
-    -------
-    : str
-        The path without the protocol prefix.
-    """
-    return _split_path_protocol(path)[1]
-
-
 def _copy_dom(dom):
     """Make a deep copy of a DOM tree.
 
@@ -242,7 +226,7 @@ def _copy_dom(dom):
 
 
 def _copy_dom_change_paths(
-    dom, file_protocols=True, paths_relative_to=None, rootdir=None
+    dom, use_protocols=True, paths_relative_to=None, rootdir=None
 ):
     """Make a deep copy of the DOM tree with modified asset paths.
 
@@ -250,14 +234,17 @@ def _copy_dom_change_paths(
     ----------
     dom : xml.dom.minidom.Document
         The XML document to copy.
-    file_protocols : bool
-        If ``True``, all asset filenames will be prefixed with ``file://``.
-        Otherwise, no protocol prefix is used.
+    use_protocols : bool
+        If ``True``, all asset filenames that do not currently have a
+        protocol (``file://`` or ``package://``) will have the ``file://``
+        protocol prepended. If ``False``, asset filenames will have any
+        protocol removed.
     paths_relative_to : str or Path or None
         If not ``None``, all asset filenames will be made relative to this
         path. Otherwise, paths are changed according to the value of
         ``rootdir`` (see below). Note that some applications may not support
-        relative paths.
+        relative paths. This parameter has no effect on filenames with the
+        ``package://`` protocol prefix.
     rootdir : str or Path or None
         If ``paths_relative_to`` is ``None`` but ``rootdir`` is not, make all
         asset filenames absolute by resolving relative paths relative to
@@ -271,26 +258,29 @@ def _copy_dom_change_paths(
     dom = _copy_dom(dom)
     for e in _urdf_elements_with_filenames(dom):
         path = e.getAttribute("filename")
-        path = _strip_path_protocol(path)
+        protocol, path = _split_path_protocol(path)
         path = Path(path)
 
-        if paths_relative_to is not None:
-            start = Path(paths_relative_to)
+        # we don't modify any paths with a package:// protocol
+        if protocol != "package://":
+            if paths_relative_to is not None:
+                start = Path(paths_relative_to)
 
-            # we always want to be relative to a directory
-            if start.is_file():
-                start = start.parent
-            path = os.path.relpath(path, start=start)
-        elif rootdir is not None:
-            # if the path is not absolute, resolve it relative to rootdir
-            if not path.is_absolute():
-                path = (Path(rootdir) / path).resolve()
+                # we always want to be relative to a directory
+                if start.is_file():
+                    start = start.parent
+                path = os.path.relpath(path, start=start)
+            elif rootdir is not None:
+                # if the path is not absolute, resolve it relative to rootdir
+                if not path.is_absolute():
+                    path = (Path(rootdir) / path).resolve()
 
-        prefix = ""
-        if file_protocols:
-            prefix = "file://"
+        if use_protocols and protocol == "":
+            protocol = "file://"
+        elif not use_protocols:
+            protocol = ""
 
-        e.setAttribute("filename", f"{prefix}{path}")
+        e.setAttribute("filename", f"{protocol}{path}")
     return dom
 
 
@@ -445,7 +435,7 @@ class XacroDoc:
         paths = set()
         for e in self._elements_with_filenames():
             path = e.getAttribute("filename")
-            path = _strip_path_protocol(path)
+            _, path = _split_path_protocol(path)
             paths.add(path)
         return len(paths)
 
@@ -497,7 +487,7 @@ class XacroDoc:
         import mujoco
 
         dom = _copy_dom_change_paths(
-            self.dom, file_protocols=False, rootdir=self.rootdir
+            self.dom, use_protocols=False, rootdir=self.rootdir
         )
 
         # set compile options
@@ -571,7 +561,7 @@ class XacroDoc:
         self,
         path,
         compare_existing=True,
-        file_protocols=True,
+        use_protocols=True,
         relative_paths=False,
         verbose=False,
     ):
@@ -586,9 +576,11 @@ class XacroDoc:
             and only write back to it if the parsed URDF is different than the
             file content. This avoids some race conditions if the file is being
             compiled by multiple processes concurrently.
-        file_protocols : bool
-            If ``True``, all asset filenames will be prefixed with ``file://``.
-            Otherwise, no protocol prefix is used.
+        use_protocols : bool
+            If ``True``, all asset filenames that do not currently have a
+            protocol (``file://`` or ``package://``) will have the ``file://``
+            protocol prepended. If ``False``, asset filenames will have any
+            protocol removed.
         relative_paths : bool
             If ``True``, convert all asset filenames to be relative to the
             specified output ``path``. Otherwise, absolute paths are used. Note
@@ -599,7 +591,7 @@ class XacroDoc:
         """
         paths_relative_to = path if relative_paths else None
         s = self.to_urdf_string(
-            file_protocols=file_protocols,
+            use_protocols=use_protocols,
             paths_relative_to=paths_relative_to,
             pretty=True,
         )
@@ -672,22 +664,22 @@ class XacroDoc:
             os.remove(path)
 
     def to_urdf_string(
-        self, file_protocols=True, paths_relative_to=None, pretty=True
+        self, use_protocols=True, paths_relative_to=None, pretty=True
     ):
         """Get the URDF as a string.
 
         Parameters
         ----------
-        file_protocols : bool
-            If ``True``, all asset filenames will be prefixed with ``file://``.
-            Otherwise, no protocol prefix is used.
-        file_protocols : bool
-            If ``True``, all asset filenames will be prefixed with ``file://``.
-            Otherwise, no protocol prefix is used.
+        use_protocols : bool
+            If ``True``, all asset filenames that do not currently have a
+            protocol (``file://`` or ``package://``) will have the ``file://``
+            protocol prepended. If ``False``, asset filenames will have any
+            protocol removed.
         paths_relative_to : str or Path or None
             If not ``None``, all asset filenames will be made relative to this
-            path. Otherwise, absolute paths are used. Note that some applications
-            may not support relative paths.
+            path. Otherwise, absolute paths are used. Note that some
+            applications may not support relative paths. Has no effect on
+            filenames with the ``package://`` protocol prefix.
         pretty : bool
             True to format the string for human readability, False otherwise.
 
@@ -698,7 +690,7 @@ class XacroDoc:
         """
         dom = _copy_dom_change_paths(
             self.dom,
-            file_protocols=file_protocols,
+            use_protocols=use_protocols,
             paths_relative_to=paths_relative_to,
             rootdir=self.rootdir,
         )
