@@ -284,11 +284,11 @@ xacrodoc input.urdf.xacro mass:=1
 # -r (--relative-paths)
 xacrodoc input.urdf.xacro -s -r output.urdf
 
-# convert to MJCF (requires Mujoco)
+# alternatively, convert to MJCF (requires Mujoco)
 # the -c (--copy-assets-to) option with a directory name is required when 
 # converting to MJCF; it copies all assets to that directory and updates their
-# file paths (-c is optional when converting to URDF) relative file paths are 
-# always used when converting to MJCF
+# file paths (-c is optional when converting to URDF)
+# relative file paths are always used when converting to MJCF
 xacrodoc input.urdf.xacro --mjcf -c assets -o output.xml
 ```
 
