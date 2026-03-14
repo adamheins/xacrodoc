@@ -176,8 +176,8 @@ doc = XacroDoc.from_file("robot.urdf.xacro", subargs={"mass": "2"})
 
 ### Resolving file names with respect to packages
 
-Finally, one feature of URDF (not just xacro files) is that file names (e.g.,
-for meshes) can be specified relative to a package by using
+One feature of URDF (not just xacro files) is that file names (e.g., for
+meshes) can be specified relative to a package by using
 ```
 package://<pkg>/relative/path/to/mesh
 ```
@@ -198,21 +198,21 @@ former can be controlled using the `resolve_packages` parameter.
 For some applications, one may wish to eliminate the protocol prefixes
 entirely. This can be done by passing `use_protocols=False` to the
 `XacroDoc.to_urdf_string` or `XacroDoc.to_urdf_file` methods, which will strip
-away any `file://` protocols (since it doesn't make sense to strip an
-unresolved `package://` prefix, an error is raised in this case). Conversely,
-if `use_protocols=True` (the default), then a `file://` protocol prefix is
-added to any file names without a prefix (`package://` prefixes are left
-unchanged).
+away any `file://` protocols (it doesn't make sense to strip an unresolved
+`package://` prefix, an error is raised if one is found when
+`use_protocols=False`). Conversely, if `use_protocols=True` (the default), then
+a `file://` protocol prefix is added to any file names without a prefix
+and `package://` prefixes are left unchanged. Note that protocols are always
+stripped when converted to MJCF.
 
 In addition, one can control whether resolved file paths are absolute or
 relative. By default, URDF works with absolute paths, but many applications
 support relative paths, which are also more portable. When converting to a file
 using the `XacroDoc.to_urdf_file` method, passing `relative_paths=True` will
-make all file names relative to the output file location.
-
-When converting to a string using `XacroDoc.to_urdf_string`, you can pass a path to
+make all file names relative to the output file location. When converting to a
+string using `XacroDoc.to_urdf_string`, you can pass a path to
 `paths_relative_to` to make all file names relative to that path in the
-resulting URDF string. Otherwise, paths will be made absolute. 
+resulting URDF string.
 
 When loading a document that has relative file names, they are resolved
 relative to the `XacroDoc.rootdir` attribute if it is not `None`. When the
