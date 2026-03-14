@@ -13,6 +13,10 @@ from .xacro.xacro import substitution_args
 from .xacro.xacro.color import warning
 
 
+FILE_PROTOCOL_PREFIX = "file://"
+PACKAGE_PROTOCOL_PREFIX = "package://"
+
+
 # monkey patch to replace xacro's package finding infrastructure
 # NOTE: we include a vendored version of xacro here to ensure we always have
 # compatibility even if the user has a different version of xacro installed
@@ -94,17 +98,18 @@ def _urdf_elements_with_filenames(dom):
 
 
 def _resolve_packages(dom):
-    """Convert all filenames specified with package:// to a full absolute path.
+    """Convert all filenames specified with package:// to a full absolute path
+    with a file:// prefix.
 
     Parameters
     ----------
     dom : xml.dom.minidom.Document
         The XML document, which is modified in place.
     """
-    pkg_regex = re.compile(r"package://([ \w-]+)/")
+    pkg_regex = re.compile(PACKAGE_PROTOCOL_PREFIX + r"([ \w-]+)/")
     for e in _urdf_elements_with_filenames(dom):
         filename = e.getAttribute("filename")
-        if filename.startswith("package://"):
+        if filename.startswith(PACKAGE_PROTOCOL_PREFIX):
             pkg = pkg_regex.search(filename).group(1)
 
             # ROS doesn't support spaces in package names, so neither do we;
@@ -114,20 +119,23 @@ def _resolve_packages(dom):
                     f"Package name '{pkg}' contains spaces, which is not allowed."
                 )
             abspath = Path(packages.get_path(pkg)).absolute().as_posix()
-            filename = re.sub(f"package://{pkg}", f"file://{abspath}", filename)
+            filename = re.sub(
+                f"{PACKAGE_PROTOCOL_PREFIX}{pkg}",
+                f"{FILE_PROTOCOL_PREFIX}{abspath}",
+                filename,
+            )
             e.setAttribute("filename", filename)
 
 
 def _set_mjcf_compile_options(dom, **kwargs):
-    """Add or set compiler options in the mujoco extension.
-
-    All ``kwargs`` are used as Mujoco compiler options; see
-    https://mujoco.readthedocs.io/en/stable/modeling.html#curdf
+    """Add or set compiler options in the Mujoco extension.
 
     Parameters
     ----------
     dom : xml.dom.minidom.Document
         The XML document, which is modified in place.
+    **kwargs : dict
+        All keyword arguments are interpreted as Mujoco compiler options.
     """
     mujoco_nodes = dom.getElementsByTagName("mujoco")
     if len(mujoco_nodes) > 1:
@@ -248,7 +256,10 @@ def _copy_dom_change_paths(
     rootdir : str or Path or None
         If ``paths_relative_to`` is ``None`` but ``rootdir`` is not, make all
         asset filenames absolute by resolving relative paths relative to
-        ``rootdir``. If the filename is already absolute, it is left unchanged.
+        ``rootdir``. If the filename is already absolute or if
+        ``paths_relative_to`` and ``rootdir`` are both ``None``, the filename
+        is left unchanged. This argument has no effect if ``paths_relative_to``
+        is not ``None``.
 
     Returns
     -------
@@ -262,7 +273,7 @@ def _copy_dom_change_paths(
         path = Path(path)
 
         # we don't modify any paths with a package:// protocol
-        if protocol != "package://":
+        if protocol != PACKAGE_PROTOCOL_PREFIX:
             if paths_relative_to is not None:
                 start = Path(paths_relative_to)
 
@@ -276,8 +287,16 @@ def _copy_dom_change_paths(
                     path = (Path(rootdir) / path).resolve()
 
         if use_protocols and protocol == "":
-            protocol = "file://"
+            protocol = FILE_PROTOCOL_PREFIX
         elif not use_protocols:
+            if protocol == PACKAGE_PROTOCOL_PREFIX:
+                raise ValueError(
+                    "Protocol prefixes are being stripped because "
+                    f"use_protocols=True, but a {PACKAGE_PROTOCOL_PREFIX} "
+                    "prefix was found. You should resolve all package "
+                    "references to file paths (path resolve_packages=True to "
+                    "the XacroDoc constructors) before stripping protocols."
+                )
             protocol = ""
 
         e.setAttribute("filename", f"{protocol}{path}")
@@ -287,62 +306,21 @@ def _copy_dom_change_paths(
 class XacroDoc:
     """Convenience class to build URDF strings and files out of xacro components.
 
-    Parameters
-    ----------
-    text : str
-        The xacro text to compile into a URDF document.
-    subargs : dict or None
-        Optional dict of substitution arguments; i.e., the values of
-        ``<xacro:arg ...>`` directives. Equivalent to writing ``value:=foo`` on
-        the command line.
-    max_runs : int
-        The text is repeated compiled until a fixed point is reached; i.e.,
-        compilation of the text just returns the same text. ``max_runs`` is the
-        maximum number of times compilation will be performed.
-    resolve_packages : bool
-        If ``True``, resolve package protocol URIs in the compiled URDF.
-        Otherwise, they are left unchanged.
-
     Attributes
     ----------
-    dom :
-        The underlying XML document.
+    dom : xml.dom.minidom.Document
+        The XML document representing the URDF.
+    rootdir : str or Path or None
+        Root directory to resolve relative asset filenames with respect to.
     """
 
     def __init__(
         self,
-        text,
-        subargs=None,
-        max_runs=10,
-        resolve_packages=True,
+        dom,
+        rootdir=None,
     ):
-        warnings.warn(
-            "Calling XacroDoc's `__init__` directly is deprecated and its behaviour will change in xacrodoc version 2.0. Please use the `from_string` method instead.",
-            DeprecationWarning,
-        )
-        self.dom = _compile_xacro_file(
-            text=text,
-            subargs=subargs,
-            max_runs=max_runs,
-        )
-        if resolve_packages:
-            _resolve_packages(self.dom)
-
-    @property
-    def doc(self):
-        warnings.warn(
-            "The attribute ``doc`` is deprecated and will be removed in xacrodoc version 2.0. Please use the attribute ``dom`` instead.",
-            DeprecationWarning,
-        )
-        return self.dom
-
-    @doc.setter
-    def doc(self, value):
-        warnings.warn(
-            "The attribute ``doc`` is deprecated and will be removed in xacrodoc version 2.0. Please use the attribute ``dom`` instead.",
-            DeprecationWarning,
-        )
-        self.dom = value
+        self.dom = dom
+        self.rootdir = rootdir
 
     @classmethod
     def from_string(
@@ -353,6 +331,26 @@ class XacroDoc:
         resolve_packages=True,
         rootdir=None,
     ):
+        """Load the URDF document from a xacro or plain URDF string.
+
+        Parameters
+        ----------
+        text : str
+            The xacro text to compile into a URDF document.
+        subargs : dict or None
+            Optional dict of substitution arguments; i.e., the values of
+            ``<xacro:arg ...>`` directives. Equivalent to writing ``value:=foo`` on
+            the command line.
+        max_runs : int
+            The text is repeated compiled until a fixed point is reached; i.e.,
+            compilation of the text just returns the same text. ``max_runs`` is the
+            maximum number of times compilation will be performed.
+        resolve_packages : bool
+            If ``True``, resolve package protocol URIs in the compiled URDF.
+            Otherwise, they are left unchanged.
+        rootdir : str or Path or None
+            Root directory to resolve relative asset filenames with respect to.
+        """
         dom = _compile_xacro_file(
             text=text,
             subargs=subargs,
@@ -360,12 +358,7 @@ class XacroDoc:
         )
         if resolve_packages:
             _resolve_packages(dom)
-
-        # TODO: until we change __init__
-        obj = cls.__new__(cls)
-        obj.dom = dom
-        obj.rootdir = rootdir
-        return obj
+        return cls(dom=dom, rootdir=rootdir)
 
     @classmethod
     def from_file(cls, path, walk_up=True, **kwargs):
@@ -378,6 +371,9 @@ class XacroDoc:
         walk_up : bool
             If ``True``, look for packages by walking up the directory tree
             from ``path``.
+        **kwargs : dict
+            Additional keyword arguments are passed to the ``.from_string``
+            constructor method.
         """
         if walk_up:
             packages.walk_up_from(path)
@@ -397,6 +393,9 @@ class XacroDoc:
             The name of the ROS package.
         relative_path : str or Path
             The path of the xacro file relative to the ROS package.
+        **kwargs : dict
+            Additional keyword arguments are passed to the ``.from_file``
+            constructor method.
         """
         path = packages.get_file_path(package_name, relative_path)
         return cls.from_file(path, **kwargs)
@@ -413,6 +412,9 @@ class XacroDoc:
             directive is valid, so look-ups like ``$(find package)`` are valid.
         name : str
             The name attribute of the top-level robot tag.
+        **kwargs : dict
+            Additional keyword arguments are passed to the ``.from_string``
+            method.
         """
         s = _xacro_header(name)
         for incl in includes:
@@ -421,7 +423,7 @@ class XacroDoc:
         return cls.from_string(s, **kwargs)
 
     def _elements_with_filenames(self):
-        """Returns a list of all elements that have filename attributes."""
+        """Returns a list of all elements that have the filename attribute."""
         return _urdf_elements_with_filenames(self.dom)
 
     def count_assets(self):
@@ -451,6 +453,10 @@ class XacroDoc:
         asset_dir : str or Path
             The path to the local directory where all the assets should be
             copied to.
+        exist_ok : bool
+            If ``False``, an error will be raised if ``asset_dir`` already
+            exists. If ``True`` and ``asset_dir`` already exists, then any
+            files in ``asset_dir`` could be overwritten.
         """
         basenames = set()
         path_map = {}
@@ -481,8 +487,13 @@ class XacroDoc:
     def _to_mjcf_spec(self, path, **kwargs):
         """Convert a Mujoco spec relative to ``path``.
 
-        All ``kwargs`` are used as Mujoco compiler options; see
-        https://mujoco.readthedocs.io/en/stable/modeling.html#curdf
+        Parameters
+        ----------
+        path : str or Path
+            The path to the MJCF XML file to be written.
+        **kwargs : dict
+            All keyword arguments are passed as Mujoco compiler options; see
+            https://mujoco.readthedocs.io/en/stable/modeling.html#curdf
         """
         import mujoco
 
@@ -524,13 +535,13 @@ class XacroDoc:
         This requires the ``mujoco`` module to be installed and available for
         import.
 
-        All ``kwargs`` are used as Mujoco compiler options; see
-        https://mujoco.readthedocs.io/en/stable/modeling.html#curdf
-
         Parameters
         ----------
         path : str or Path
             The path to the MJCF XML file to be written.
+        **kwargs : dict
+            All keyword arguments are passed as Mujoco compiler options; see
+            https://mujoco.readthedocs.io/en/stable/modeling.html#curdf
         """
         path = Path(path)
         spec = self._to_mjcf_spec(path, **kwargs)
@@ -550,8 +561,14 @@ class XacroDoc:
         All ``kwargs`` are used as Mujoco compiler options; see
         https://mujoco.readthedocs.io/en/stable/modeling.html#curdf
 
-        Returns
+        Parameters
         ----------
+        **kwargs : dict
+            All keyword arguments are passed as Mujoco compiler options; see
+            https://mujoco.readthedocs.io/en/stable/modeling.html#curdf
+
+        Returns
+        -------
         : str
             The string of XML.
         """
@@ -681,7 +698,8 @@ class XacroDoc:
             applications may not support relative paths. Has no effect on
             filenames with the ``package://`` protocol prefix.
         pretty : bool
-            True to format the string for human readability, False otherwise.
+            Set ``True`` to format the string for human readability, ``False``
+            otherwise.
 
         Returns
         -------

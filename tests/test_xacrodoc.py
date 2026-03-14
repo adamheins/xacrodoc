@@ -181,6 +181,11 @@ def test_localize_assets():
         assert "base.stl" in files
         assert "base_001.stl" in files
 
+    # error out if directory already exists and exist_ok=False
+    with tempfile.TemporaryDirectory() as asset_dir:
+        with pytest.raises(FileExistsError):
+            doc.localize_assets(asset_dir, exist_ok=False)
+
 
 def test_relative_paths():
     doc = XacroDoc.from_file("files/xacro/mesh.urdf.xacro")
@@ -217,7 +222,21 @@ def test_use_protocols():
     for match in matches:
         assert not match.startswith("file://")
 
-    # TODO should have a test where package:// is not stripped out
+    # when packages are not resolved and protocols are not removed, the
+    # package:// prefix should be left alone
+    doc = XacroDoc.from_file(
+        "files/xacro/mesh2.urdf.xacro", resolve_packages=False
+    )
+    s = doc.to_urdf_string(use_protocols=True)
+    matches = FILENAME_REGEX.findall(s)
+    assert len(matches) == 2
+    for match in matches:
+        assert match.startswith("package://")
+
+    # an error should be raised if we try to strip an unresolved package://
+    # prefix
+    with pytest.raises(ValueError):
+        doc.to_urdf_string(use_protocols=False)
 
 
 def test_count_assets():
@@ -239,7 +258,7 @@ def test_count_assets():
 def test_rootdir():
     doc = XacroDoc.from_file("files/xacro/mesh_rel_path.urdf.xacro")
 
-    # the mesh file is specified with a relative path to the URDF file
+    # the mesh file is specified with a relative path to the URDF file;
     # ensure that it resolves correctly
     s = doc.to_urdf_string(use_protocols=False)
     matches = FILENAME_REGEX.findall(s)

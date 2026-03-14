@@ -187,7 +187,39 @@ xacrodoc automatically expands these paths out to full absolute paths, e.g.,
 file:///abs/path/to/mesh
 ```
 but this can be disabled by passing `resolve_packages=False` to the `XacroDoc`
-constructor.
+constructor methods.
+
+### Additional file name manipulation
+
+As just described, URDFs typically prefix asset file names with a protocol,
+either `file://` or `package://`, and the resolution of the latter to the
+former can be controlled using the `resolve_packages` parameter.
+
+For some applications, one may wish to eliminate the protocol prefixes
+entirely. This can be done by passing `use_protocols=False` to the
+`XacroDoc.to_urdf_string` or `XacroDoc.to_urdf_file` methods, which will strip
+away any `file://` protocols (since it doesn't make sense to strip an
+unresolved `package://` prefix, an error is raised in this case). Conversely,
+if `use_protocols=True` (the default), then a `file://` protocol prefix is
+added to any file names without a prefix (`package://` prefixes are left
+unchanged).
+
+In addition, one can control whether resolved file paths are absolute or
+relative. By default, URDF works with absolute paths, but many applications
+support relative paths, which are also more portable. When converting to a file
+using the `XacroDoc.to_urdf_file` method, passing `relative_paths=True` will
+make all file names relative to the output file location.
+
+When converting to a string using `XacroDoc.to_urdf_string`, you can pass a path to
+`paths_relative_to` to make all file names relative to that path in the
+resulting URDF string. Otherwise, paths will be made absolute. 
+
+When loading a document that has relative file names, they are resolved
+relative to the `XacroDoc.rootdir` attribute if it is not `None`. When the
+document is loaded from a file using `XacroDoc.from_file` or
+`XacroDoc.from_package_file`, `rootdir` is automatically set to be that file's
+parent directory. When the document is loaded using `XacroDoc.from_string` or
+`XacroDoc.from_includes`, `rootdir` can be specified as an argument.
 
 ### Conversion to MJCF format
 
