@@ -267,27 +267,28 @@ xacrodoc input.urdf.xacro
 xacrodoc input.urdf.xacro -o output.urdf
 
 # provide directories in which to look for packages referenced in
-# input.urdf.xacro (-d flag is needed before each one to disambiguate from
-# substitution arguments); a common usecase would be providing the path to
-# catkin workspaces
+# input.urdf.xacro (the -d (--pkg-dir) flag is needed before each one to
+# disambiguate from substitution arguments); a common usecase would be
+# providing the path to catkin workspaces
 xacrodoc input.urdf.xacro -d ~/my_pkg_dir -d ~/my_other_pkg_dir
 
 # alternatively, package name/path mappings can be directly supplied using the
-# -p flag; := is used to separate the name and path:
+# -p (--pkg-path) flag; := is used to separate the name and path:
 xacrodoc input.urdf.xacro -p my_pkg:=~/path/to/my_pkg -p other_pkg:=/home/foo/packages/other_pkg
 
 # substitution arguments also use := notation, like xacro
 xacrodoc input.urdf.xacro mass:=1
 
-# you can also remove file:// protocols prefixed to asset paths with -s or
-# convert paths from absolute to relative using -r
+# you can also remove file:// protocols prefixed to asset paths with
+# -s (--strip-protocols) or convert paths from absolute to relative using
+# -r (--relative-paths)
 xacrodoc input.urdf.xacro -s -r output.urdf
 
 # convert to MJCF (requires Mujoco)
-# the -c (short for --copy-assets-to) option with a directory name is required
-# when converting to MJCF; it copies all assets to that directory and updates
-# their file paths (-c is optional when converting to URDF)
-# relative file paths are always used when converting to MJCF
+# the -c (--copy-assets-to) option with a directory name is required when 
+# converting to MJCF; it copies all assets to that directory and updates their
+# file paths (-c is optional when converting to URDF) relative file paths are 
+# always used when converting to MJCF
 xacrodoc input.urdf.xacro --mjcf -c assets -o output.xml
 ```
 
