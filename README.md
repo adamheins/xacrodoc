@@ -83,7 +83,7 @@ xacrodoc input.urdf.xacro -o output.urdf
 
 # provide directories in which to look for packages referenced in
 # input.urdf.xacro (the -d (--pkg-dir) flag is needed before each one to
-# disambiguate from substitution arguments); a common usecase would be
+# disambiguate from substitution arguments); a common use-case would be
 # providing the path to catkin workspaces
 xacrodoc input.urdf.xacro -d ~/my_pkg_dir -d ~/my_other_pkg_dir
 
