@@ -24,6 +24,8 @@ dev = [
   "pytest>=7.4.0",
 ]
 docs = [
+  "linkify-it-py>=2.0.3",
+  "myst-parser>=3.0.1",
   "sphinx>=7.1.2",
   "sphinx-rtd-theme>=3.0.2",
 ]

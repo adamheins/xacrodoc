@@ -1,9 +1,10 @@
 # xacrodoc
 
 xacrodoc is a tool for compiling [xacro](https://github.com/ros/xacro) files to
-plain URDF files or Mujoco MJCF files from within [Python code](#python-usage)
-or via the [command line](#command-line-usage). It is fully functional whether
-ROS is installed on the system or not.
+plain URDF files or Mujoco MJCF files from within
+[Python code](#python-library-usage) or via the
+[command line](#command-line-usage). It is fully functional whether ROS is
+installed on the system or not.
 
 ## Why?
 
