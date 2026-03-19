@@ -3,8 +3,9 @@ import os
 from pathlib import Path
 import sys
 
-from .xacro.xacro.color import error, warning
-from .xacro.xacro import XacroException
+from xacro.color import error, warning
+from xacro import XacroException
+
 from .packages import look_in, update_package_cache, PackageNotFoundError
 from .version import __version__
 from .xacrodoc import XacroDoc
