@@ -17,10 +17,6 @@ python:
     - method: pip
       path: .
 
-submodules:
-  include:
-    - src/xacrodoc/xacro
-
 # build documentation in the "docs/" directory with Sphinx
 sphinx:
    configuration: docs/src/conf.py
