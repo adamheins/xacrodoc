@@ -7,10 +7,11 @@ import tempfile
 from xml.dom.minidom import parseString
 import warnings
 
+import xacro
+from xacro import substitution_args
+from xacro.color import warning
+
 from . import packages
-from .xacro import xacro
-from .xacro.xacro import substitution_args
-from .xacro.xacro.color import warning
 
 
 FILE_PROTOCOL_PREFIX = "file://"
