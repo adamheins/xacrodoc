@@ -2136,9 +2136,6 @@ name = "xacrodoc"
 version = "2.0.0"
 source = { editable = "." }
 dependencies = [
-    { name = "docutils", version = "0.20.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
-    { name = "docutils", version = "0.21.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9' and python_full_version < '3.11'" },
-    { name = "docutils", version = "0.22.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "rospkg" },
     { name = "xacro" },
 ]
@@ -2172,7 +2169,6 @@ docs = [
 
 [package.metadata]
 requires-dist = [
-    { name = "docutils", specifier = "!=0.21" },
     { name = "mujoco", marker = "extra == 'mujoco'", specifier = ">=3.2.3" },
     { name = "rospkg", specifier = ">=1.5.0" },
     { name = "xacro", specifier = ">=2.1.1" },
