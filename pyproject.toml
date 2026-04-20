@@ -1,6 +1,6 @@
 [project]
 name = "xacrodoc"
-version = "2.0.0"
+version = "2.0.1"
 description = "Compile xacro files to URDF or MJCF from Python or the command line (no ROS required)."
 authors = [
   {name = "Adam Heins", email = "mail@adamheins.com"}
@@ -15,7 +15,9 @@ dependencies = [
 
 [project.optional-dependencies]
 mujoco = [
-    "mujoco>=3.2.3",
+    "mujoco==3.2.3; python_version == '3.8'",
+    "mujoco==3.3.7; python_version == '3.9'",
+    "mujoco>=3.4.0; python_version > '3.9'",
 ]
 
 [dependency-groups]
