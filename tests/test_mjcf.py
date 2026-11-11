@@ -8,6 +8,40 @@ import pytest
 from xacrodoc import XacroDoc, packages
 
 
+def assert_mjcf_equivalent(actual, expected):
+    """Assert that two MJCF strings compile to equivalent models.
+
+    The exact XML that mujoco writes (attribute order, whether default values
+    are written out) varies across mujoco versions, so we compare the compiled
+    models rather than the raw strings.
+
+    Parameters
+    ----------
+    actual : str
+        Actual string of Mujoco XML.
+    expected: str
+        Expected string of Mujoco XML.
+    """
+    import mujoco
+    import numpy as np
+
+    m1 = mujoco.MjModel.from_xml_string(actual)
+    m2 = mujoco.MjModel.from_xml_string(expected)
+
+    for name in dir(m1):
+        if name.startswith("_"):
+            continue
+        try:
+            a, b = getattr(m1, name), getattr(m2, name)
+        except Exception:
+            continue
+        if isinstance(a, np.ndarray):
+            assert a.shape == b.shape, name
+            assert np.allclose(a, b, equal_nan=True), name
+        elif isinstance(a, (bool, int, float, str, bytes)):
+            assert a == b, name
+
+
 def setup_function():
     try:
         import mujoco
@@ -46,7 +80,7 @@ def test_mjcf_existing_mujoco_extension():
 
     # check that this works when a mujoco extension is already present
     doc = XacroDoc.from_file("files/xacro/threelink_mujoco.urdf.xacro")
-    assert doc.to_mjcf_string().strip() == expected.strip()
+    assert_mjcf_equivalent(doc.to_mjcf_string(), expected)
 
 
 def test_to_mjcf_file():

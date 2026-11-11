@@ -253,7 +253,8 @@ def _copy_dom_change_paths(
         path. Otherwise, paths are changed according to the value of
         ``rootdir`` (see below). Note that some applications may not support
         relative paths. This parameter has no effect on filenames with the
-        ``package://`` protocol prefix.
+        ``package://`` protocol prefix. If the path does not exist, it is
+        assumed to refer to a directory.
     rootdir : str or Path or None
         If ``paths_relative_to`` is ``None`` but ``rootdir`` is not, make all
         asset filenames absolute by resolving relative paths relative to
@@ -278,7 +279,8 @@ def _copy_dom_change_paths(
             if paths_relative_to is not None:
                 start = Path(paths_relative_to)
 
-                # we always want to be relative to a directory
+                # we always want to be relative to a directory, but we allow
+                # passing a file for convenience
                 if start.is_file():
                     start = start.parent
                 path = os.path.relpath(path, start=start)
@@ -607,7 +609,7 @@ class XacroDoc:
             Set to ``True`` to print information about xacro compilation,
             ``False`` otherwise.
         """
-        paths_relative_to = path if relative_paths else None
+        paths_relative_to = Path(path).parent if relative_paths else None
         s = self.to_urdf_string(
             use_protocols=use_protocols,
             paths_relative_to=paths_relative_to,
@@ -697,7 +699,8 @@ class XacroDoc:
             If not ``None``, all asset filenames will be made relative to this
             path. Otherwise, absolute paths are used. Note that some
             applications may not support relative paths. Has no effect on
-            filenames with the ``package://`` protocol prefix.
+            filenames with the ``package://`` protocol prefix. If the path does
+            not exist, it is assumed to refer to a directory.
         pretty : bool
             Set ``True`` to format the string for human readability, ``False``
             otherwise.

@@ -205,6 +205,31 @@ def test_relative_paths():
     assert matches[0] == meshpath.absolute().as_posix()
 
 
+def test_relative_paths_new_file():
+    doc = XacroDoc.from_file("files/xacro/mesh.urdf.xacro")
+    meshpath = Path("files/assets/base.stl").resolve()
+
+    # to_urdf_file always resolves relative to *parent* of the output file
+    # rather than file itself
+    with tempfile.TemporaryDirectory() as d:
+        out = Path(d) / "robot.urdf"
+        assert not out.exists()
+        doc.to_urdf_file(out, relative_paths=True, use_protocols=False)
+        matches = FILENAME_REGEX.findall(out.read_text())
+        assert len(matches) == 1
+        assert (out.parent / matches[0]).resolve() == meshpath
+
+    # to_urdf_string defaults to assuming the paths_relative_to path is a
+    # directory if the path does not currently exist
+    with tempfile.TemporaryDirectory() as d:
+        path = Path(d) / "fake_path"
+        assert not path.exists()
+        s = doc.to_urdf_string(paths_relative_to=path, use_protocols=False)
+        matches = FILENAME_REGEX.findall(s)
+        assert len(matches) == 1
+        assert (path / matches[0]).resolve() == meshpath
+
+
 def test_use_protocols():
     doc = XacroDoc.from_file("files/xacro/mesh2.urdf.xacro")
 
